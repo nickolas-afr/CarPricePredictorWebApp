@@ -5,13 +5,13 @@ namespace CarPricePredictor.ML.Models;
 public class CarData
 {
     [LoadColumn(0)]
-    public string Make { get; set; } = string.Empty;
+    public float Mileage { get; set; }
 
     [LoadColumn(1)]
-    public string Model { get; set; } = string.Empty;
+    public string Make { get; set; } = string.Empty;
 
     [LoadColumn(2)]
-    public float Mileage { get; set; }
+    public string Model { get; set; } = string.Empty;
 
     [LoadColumn(3)]
     public string Fuel { get; set; } = string.Empty;
@@ -20,7 +20,7 @@ public class CarData
     public string Gear { get; set; } = string.Empty;
 
     [LoadColumn(5)]
-    public float OfferType { get; set; }
+    public string OfferType { get; set; } = string.Empty;
 
     [LoadColumn(6)]
     [ColumnName("Label")]

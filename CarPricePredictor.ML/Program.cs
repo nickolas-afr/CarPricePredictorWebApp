@@ -33,13 +33,24 @@ class Program
             hasHeader: true,
             separatorChar: ',');
 
-        // Take a sample for faster training (optional - remove for full dataset)
-        var preview = mlContext.Data.TakeRows(dataView, 50000);
-        
         Console.WriteLine($"Loaded data successfully!");
+        
+        // Inspect the data
+        Console.WriteLine("\nInspecting first few rows...");
+        var dataPreview = mlContext.Data.CreateEnumerable<CarData>(dataView, reuseRowObject: false).Take(3);
+        foreach (var row in dataPreview)
+        {
+            Console.WriteLine($"  {row.Make} {row.Model}, {row.Year}, {row.Mileage:N0}km, {row.Hp}hp, €{row.Price:N0}");
+        }
+
+        // Take a sample for faster training (optional - remove for full dataset)
+        Console.WriteLine("\nPreparing data for training...");
+        var sampleData = mlContext.Data.TakeRows(dataView, 50000);
+        
+        Console.WriteLine($"Data ready for training!");
 
         // Split data for training and testing
-        var split = mlContext.Data.TrainTestSplit(preview, testFraction: 0.2);
+        var split = mlContext.Data.TrainTestSplit(sampleData, testFraction: 0.2);
 
         // Build training pipeline
         Console.WriteLine("Building training pipeline...");
@@ -47,8 +58,9 @@ class Program
             .Append(mlContext.Transforms.Categorical.OneHotEncoding("ModelEncoded", "Model"))
             .Append(mlContext.Transforms.Categorical.OneHotEncoding("FuelEncoded", "Fuel"))
             .Append(mlContext.Transforms.Categorical.OneHotEncoding("GearEncoded", "Gear"))
+            .Append(mlContext.Transforms.Categorical.OneHotEncoding("OfferTypeEncoded", "OfferType"))
             .Append(mlContext.Transforms.Concatenate("Features", 
-                "MakeEncoded", "ModelEncoded", "Mileage", "FuelEncoded", "GearEncoded", "OfferType", "Hp", "Year"))
+                "MakeEncoded", "ModelEncoded", "Mileage", "FuelEncoded", "GearEncoded", "OfferTypeEncoded", "Hp", "Year"))
             .Append(mlContext.Regression.Trainers.FastTree(
                 labelColumnName: "Label",
                 featureColumnName: "Features",
@@ -93,7 +105,7 @@ class Program
             Mileage = 50000,
             Fuel = "Diesel",
             Gear = "Automatic",
-            OfferType = 0,
+            OfferType = "Used",
             Hp = 150,
             Year = 2018
         };
