@@ -40,7 +40,7 @@ class Program
         var dataPreview = mlContext.Data.CreateEnumerable<CarData>(dataView, reuseRowObject: false).Take(3);
         foreach (var row in dataPreview)
         {
-            Console.WriteLine($"  {row.Make} {row.Model}, {row.Year}, {row.Mileage:N0}km, {row.Hp}hp, €{row.Price:N0}");
+            Console.WriteLine($"  {row.Make} {row.Model}, {row.Year}, {row.Mileage:N0}km, {row.Hp}hp, ${row.Price:N0}");
         }
 
         // Take a sample for faster training (optional - remove for full dataset)
@@ -80,8 +80,8 @@ class Program
 
         Console.WriteLine($"\n=== Model Metrics ===");
         Console.WriteLine($"R-Squared: {metrics.RSquared:0.####}");
-        Console.WriteLine($"Root Mean Squared Error: €{metrics.RootMeanSquaredError:N2}");
-        Console.WriteLine($"Mean Absolute Error: €{metrics.MeanAbsoluteError:N2}");
+        Console.WriteLine($"Root Mean Squared Error: ${metrics.RootMeanSquaredError:N2}");
+        Console.WriteLine($"Mean Absolute Error: ${metrics.MeanAbsoluteError:N2}");
 
         // Save the model
         string modelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CarPriceModel.zip");
@@ -112,7 +112,7 @@ class Program
 
         var prediction = predictionEngine.Predict(testCar);
         Console.WriteLine($"\nTest Car: {testCar.Make} {testCar.Model}, {testCar.Year}, {testCar.Mileage:N0}km, {testCar.Hp}hp");
-        Console.WriteLine($"Predicted Price: €{prediction.Price:N2}");
+        Console.WriteLine($"Predicted Price: ${prediction.Price:N2}");
 
         Console.WriteLine("\nPress any key to exit...");
         Console.ReadKey();

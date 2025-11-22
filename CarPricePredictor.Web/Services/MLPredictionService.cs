@@ -1,4 +1,5 @@
 using Microsoft.ML;
+using Microsoft.ML.Data;
 using CarPricePredictor.Web.Models;
 
 namespace CarPricePredictor.Web.Services;
@@ -8,28 +9,41 @@ public class MLPredictionService : IPredictionService
     private readonly MLContext _mlContext;
     private readonly ITransformer? _model;
     private readonly PredictionEngine<MLCarData, MLCarPricePrediction>? _predictionEngine;
+    private readonly ILogger<MLPredictionService> _logger;
+    private readonly string _modelLoadError;
 
-    public MLPredictionService(IWebHostEnvironment environment)
+    public MLPredictionService(IWebHostEnvironment environment, ILogger<MLPredictionService> logger)
     {
+        _logger = logger;
         _mlContext = new MLContext(seed: 0);
+        _modelLoadError = string.Empty;
 
         // Try to load the model
         var modelPath = Path.Combine(environment.WebRootPath, "MLModels", "CarPriceModel.zip");
         
-        if (File.Exists(modelPath))
+        _logger.LogInformation($"Attempting to load ML model from: {modelPath}");
+        
+        if (!File.Exists(modelPath))
+        {
+            _modelLoadError = $"Model file not found at: {modelPath}";
+            _logger.LogWarning(_modelLoadError);
+        }
+        else
         {
             try
             {
+                _logger.LogInformation("Model file found, loading...");
                 using (var stream = File.OpenRead(modelPath))
                 {
                     _model = _mlContext.Model.Load(stream, out var modelInputSchema);
                     _predictionEngine = _mlContext.Model.CreatePredictionEngine<MLCarData, MLCarPricePrediction>(_model);
                 }
+                _logger.LogInformation("ML model loaded successfully!");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // If model loading fails, _model and _predictionEngine will remain null
-                // and the service will return "Model Not Available" status
+                _modelLoadError = $"Failed to load model: {ex.Message}";
+                _logger.LogError(ex, "Error loading ML model");
             }
         }
     }
@@ -38,6 +52,7 @@ public class MLPredictionService : IPredictionService
     {
         if (_predictionEngine == null)
         {
+            _logger.LogWarning($"Prediction attempted but model is not available. Error: {_modelLoadError}");
             return new PredictionResultModel
             {
                 PriceStatus = "Model Not Available",
@@ -57,7 +72,7 @@ public class MLPredictionService : IPredictionService
             Mileage = input.Mileage,
             Fuel = input.Fuel,
             Gear = input.Gear,
-            OfferType = input.OfferType,
+            OfferType = input.OfferType == 0 ? "Used" : "New",  // Convert float to string
             Hp = input.Hp,
             Year = input.Year
         };
@@ -106,13 +121,14 @@ public class MLPredictionService : IPredictionService
         public float Mileage { get; set; }
         public string Fuel { get; set; } = string.Empty;
         public string Gear { get; set; } = string.Empty;
-        public float OfferType { get; set; }
+        public string OfferType { get; set; } = string.Empty;  // Changed from float to string
         public float Hp { get; set; }
         public float Year { get; set; }
     }
 
     private class MLCarPricePrediction
     {
+        [ColumnName("Score")]
         public float Price { get; set; }
     }
 }
