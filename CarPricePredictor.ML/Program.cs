@@ -20,13 +20,10 @@ class Program
         if (!File.Exists(dataPath))
         {
             Console.WriteLine($"ERROR: Dataset not found at: {dataPath}");
-            Console.WriteLine("
-Please download the dataset from:");
+            Console.WriteLine("\nPlease download the dataset from:");
             Console.WriteLine("https://www.kaggle.com/datasets/ander289386/cars-germany");
-            Console.WriteLine("
-Extract and place 'autoscout24-germany-dataset.csv' in the Data folder.");
-            Console.WriteLine("
-Press any key to exit...");
+            Console.WriteLine("\nExtract and place 'autoscout24-germany-dataset.csv' in the Data folder.");
+            Console.WriteLine("\nPress any key to exit...");
             Console.ReadKey();
             return;
         }
