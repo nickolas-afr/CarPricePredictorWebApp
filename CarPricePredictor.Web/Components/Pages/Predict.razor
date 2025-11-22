@@ -1,0 +1,187 @@
+@page "/predict"
+@inject IPredictionService PredictionService
+
+<PageTitle>Car Price Prediction</PageTitle>
+
+<h1>Car Price Prediction</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <EditForm Model="@carInput" OnValidSubmit="@HandlePredict">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label for="make" class="form-label">Brand (Make)</label>
+                <InputText id="make" class="form-control" @bind-Value="carInput.Make" placeholder="e.g., Audi, BMW, Mercedes" />
+            </div>
+
+            <div class="mb-3">
+                <label for="model" class="form-label">Model</label>
+                <InputText id="model" class="form-control" @bind-Value="carInput.Model" placeholder="e.g., A4, 3 Series, C-Class" />
+            </div>
+
+            <div class="mb-3">
+                <label for="year" class="form-label">Production Year</label>
+                <InputNumber id="year" class="form-control" @bind-Value="carInput.Year" />
+            </div>
+
+            <div class="mb-3">
+                <label for="mileage" class="form-label">Mileage (km)</label>
+                <InputNumber id="mileage" class="form-control" @bind-Value="carInput.Mileage" />
+            </div>
+
+            <div class="mb-3">
+                <label for="fuel" class="form-label">Fuel Type</label>
+                <InputSelect id="fuel" class="form-control" @bind-Value="carInput.Fuel">
+                    <option value="">-- Select Fuel Type --</option>
+                    <option value="Petrol">Petrol (Gasoline)</option>
+                    <option value="Diesel">Diesel</option>
+                    <option value="Electric">Electric</option>
+                    <option value="Hybrid">Hybrid</option>
+                    <option value="CNG">CNG</option>
+                </InputSelect>
+            </div>
+
+            <div class="mb-3">
+                <label for="gear" class="form-label">Transmission</label>
+                <InputSelect id="gear" class="form-control" @bind-Value="carInput.Gear">
+                    <option value="">-- Select Transmission --</option>
+                    <option value="Manual">Manual</option>
+                    <option value="Automatic">Automatic</option>
+                    <option value="Semi-automatic">Semi-automatic</option>
+                </InputSelect>
+            </div>
+
+            <div class="mb-3">
+                <label for="hp" class="form-label">Horsepower (HP)</label>
+                <InputNumber id="hp" class="form-control" @bind-Value="carInput.Hp" />
+            </div>
+
+            <div class="mb-3">
+                <label for="offerType" class="form-label">Offer Type</label>
+                <InputSelect id="offerType" class="form-control" @bind-Value="carInput.OfferType">
+                    <option value="@((int)OfferType.Used)">Used</option>
+                    <option value="@((int)OfferType.New)">New</option>
+                </InputSelect>
+            </div>
+
+            <div class="mb-3">
+                <label for="price" class="form-label">Asking Price (€)</label>
+                <InputNumber id="price" class="form-control" @bind-Value="carInput.Price" />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Check Price</button>
+        </EditForm>
+    </div>
+
+    <div class="col-md-6">
+        @if (showResult && result != null)
+        {
+            <div class="card">
+                <div class="card-header @GetStatusClass(result.PriceStatus)">
+                    <h3>@result.PriceStatus</h3>
+                </div>
+                <div class="card-body">
+                    @if (result.PriceStatus == "Model Not Available")
+                    {
+                        <div class="alert alert-warning">
+                            <p><strong>ML Model not found!</strong></p>
+                            <p>Please train the model first using the CarPricePredictor.ML console application and place the model file at:</p>
+                            <code>wwwroot/MLModels/CarPriceModel.zip</code>
+                        </div>
+                    }
+                    else
+                    {
+                        <h4>Price Analysis</h4>
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <th>Your Price:</th>
+                                    <td>€@carInput.Price.ToString("N2")</td>
+                                </tr>
+                                <tr>
+                                    <th>Predicted Price:</th>
+                                    <td>€@result.PredictedPrice.ToString("N2")</td>
+                                </tr>
+                                <tr>
+                                    <th>Difference:</th>
+                                    <td>€@result.Difference.ToString("N2") (@result.DifferencePercentage.ToString("N1")%)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>Typical Price Range</h4>
+                        <div class="alert alert-info">
+                            <p>
+                                For this car, similar listings typically range from:
+                                <br />
+                                <strong>€@result.MinPrice.ToString("N2")</strong> to <strong>€@result.MaxPrice.ToString("N2")</strong>
+                            </p>
+                        </div>
+
+                        @if (result.PriceStatus == "Good Price")
+                        {
+                            <div class="alert alert-success">
+                                <strong>✓ This is a fair price!</strong> The asking price is within the typical market range.
+                            </div>
+                        }
+                        else if (result.PriceStatus == "Too High")
+                        {
+                            <div class="alert alert-danger">
+                                <strong>⚠ Price is too high!</strong> The asking price is above typical market value. Consider negotiating.
+                            </div>
+                        }
+                        else if (result.PriceStatus == "Too Low")
+                        {
+                            <div class="alert alert-warning">
+                                <strong>⚠ Price seems low!</strong> This might be a great deal, but verify the car's condition carefully.
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                <p>Fill in the form and click "Check Price" to get a prediction.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private CarInputModel carInput = new CarInputModel
+    {
+        Make = "Audi",
+        Model = "A4",
+        Year = 2018,
+        Mileage = 50000,
+        Fuel = "Diesel",
+        Gear = "Automatic",
+        Hp = 150,
+        OfferType = (float)OfferType.Used,
+        Price = 25000
+    };
+
+    private PredictionResultModel? result;
+    private bool showResult = false;
+
+    private void HandlePredict()
+    {
+        result = PredictionService.PredictPrice(carInput);
+        showResult = true;
+    }
+
+    private string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            "Good Price" => "bg-success text-white",
+            "Too High" => "bg-danger text-white",
+            "Too Low" => "bg-warning",
+            _ => "bg-secondary text-white"
+        };
+    }
+}
