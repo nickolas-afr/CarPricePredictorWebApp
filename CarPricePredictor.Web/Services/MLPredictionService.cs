@@ -18,10 +18,18 @@ public class MLPredictionService : IPredictionService
         
         if (File.Exists(modelPath))
         {
-            using (var stream = File.OpenRead(modelPath))
+            try
             {
-                _model = _mlContext.Model.Load(stream, out var modelInputSchema);
-                _predictionEngine = _mlContext.Model.CreatePredictionEngine<MLCarData, MLCarPricePrediction>(_model);
+                using (var stream = File.OpenRead(modelPath))
+                {
+                    _model = _mlContext.Model.Load(stream, out var modelInputSchema);
+                    _predictionEngine = _mlContext.Model.CreatePredictionEngine<MLCarData, MLCarPricePrediction>(_model);
+                }
+            }
+            catch (Exception)
+            {
+                // If model loading fails, _model and _predictionEngine will remain null
+                // and the service will return "Model Not Available" status
             }
         }
     }

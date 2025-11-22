@@ -61,8 +61,8 @@
             <div class="mb-3">
                 <label for="offerType" class="form-label">Offer Type</label>
                 <InputSelect id="offerType" class="form-control" @bind-Value="carInput.OfferType">
-                    <option value="0">Used</option>
-                    <option value="1">New</option>
+                    <option value="@((int)OfferType.Used)">Used</option>
+                    <option value="@((int)OfferType.New)">New</option>
                 </InputSelect>
             </div>
 
@@ -161,7 +161,7 @@
         Fuel = "Diesel",
         Gear = "Automatic",
         Hp = 150,
-        OfferType = 0,
+        OfferType = (float)OfferType.Used,
         Price = 25000
     };
 
