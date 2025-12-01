@@ -11,10 +11,9 @@
     <div class="col-md-6">
         <EditForm Model="@carInput" OnValidSubmit="@HandlePredict">
             <DataAnnotationsValidator />
-            <ValidationSummary />
 
             <div class="mb-3">
-                <label for="make" class="form-label">Brand (Make)</label>
+                <label for="make" class="form-label">Brand (Make) <span class="text-danger">*</span></label>
                 <InputSelect id="make" class="form-control" @bind-Value="carInput.Make" @onchange="OnBrandChanged">
                     <option value="">-- Select Brand --</option>
                     @foreach (var brand in brandModels.Keys
@@ -24,10 +23,11 @@
                         <option value="@brand">@brand</option>
                     }
                 </InputSelect>
+                <ValidationMessage For="@(() => carInput.Make)" />
             </div>
 
             <div class="mb-3">
-                <label for="model" class="form-label">Model</label>
+                <label for="model" class="form-label">Model <span class="text-danger">*</span></label>
                 <InputSelect id="model" class="form-control" @bind-Value="carInput.Model" disabled="@(string.IsNullOrEmpty(carInput.Make))">
                     <option value="">-- Select Model --</option>
                     @if (!string.IsNullOrEmpty(carInput.Make) && brandModels.ContainsKey(carInput.Make))
@@ -38,10 +38,11 @@
                         }
                     }
                 </InputSelect>
+                <ValidationMessage For="@(() => carInput.Model)" />
             </div>
 
             <div class="mb-3">
-                <label for="year" class="form-label">Production Year: <strong>@carInput.Year</strong></label>
+                <label for="year" class="form-label">Production Year: <strong>@carInput.Year</strong> <span class="text-danger">*</span></label>
                 <div class="row g-2 align-items-center">
                     <div class="col-9">
                         <input type="range" id="year" class="form-range" min="1990" max="@DateTime.Now.Year" step="1" @bind="carInput.Year" @bind:event="oninput" />
@@ -54,10 +55,11 @@
                         <InputNumber id="yearInput" class="form-control" @bind-Value="carInput.Year" min="1990" max="@DateTime.Now.Year" />
                     </div>
                 </div>
+                <ValidationMessage For="@(() => carInput.Year)" />
             </div>
 
             <div class="mb-3">
-                <label for="mileage" class="form-label">Mileage: <strong>@carInput.Mileage.ToString("N0") km</strong></label>
+                <label for="mileage" class="form-label">Mileage: <strong>@carInput.Mileage.ToString("N0") km</strong> <span class="text-danger">*</span></label>
                 <div class="row g-2 align-items-center">
                     <div class="col-9">
                         <input type="range" id="mileage" class="form-range" min="0" max="500000" step="5000" @bind="carInput.Mileage" @bind:event="oninput" />
@@ -70,6 +72,7 @@
                         <InputNumber id="mileageInput" class="form-control" @bind-Value="carInput.Mileage" min="0" max="500000" />
                     </div>
                 </div>
+                <ValidationMessage For="@(() => carInput.Mileage)" />
             </div>
 
             <div class="mb-3">
@@ -111,16 +114,19 @@
             </div>
 
             <div class="mb-3">
-                <label for="offerType" class="form-label">Offer Type</label>
+                <label for="offerType" class="form-label">Offer Type <span class="text-danger">*</span></label>
                 <InputSelect id="offerType" class="form-control" @bind-Value="carInput.OfferType">
-                    <option value="@((int)OfferType.Used)">Used</option>
-                    <option value="@((int)OfferType.New)">New</option>
+                    <option value="-1">-- Select Offer Type --</option>
+                    <option value="0">Used</option>
+                    <option value="1">New</option>
                 </InputSelect>
+                <ValidationMessage For="@(() => carInput.OfferType)" />
             </div>
 
             <div class="mb-3">
-                <label for="price" class="form-label">Asking Price (€)</label>
+                <label for="price" class="form-label">Asking Price (€) <span class="text-danger">*</span></label>
                 <InputNumber id="price" class="form-control" @bind-Value="carInput.Price" />
+                <ValidationMessage For="@(() => carInput.Price)" />
             </div>
 
             <button type="submit" class="btn btn-primary">Check Price</button>
@@ -214,10 +220,11 @@
         // Load brand/model data from service (which may load from dataset or fallback to hardcoded)
         brandModels = CarDataService.GetBrandModels();
         
-        // Set default values for sliders
-        carInput.Year = 2020;
-        carInput.Mileage = 50000;
-        carInput.Hp = 150;
+        // Set default values for sliders to avoid validation errors
+        carInput.Year = 1990; // Default to 5 years old
+        carInput.Mileage = 0;
+        carInput.Hp = 50;
+        carInput.OfferType = -1;
     }
 
     private void OnBrandChanged(ChangeEventArgs e)
