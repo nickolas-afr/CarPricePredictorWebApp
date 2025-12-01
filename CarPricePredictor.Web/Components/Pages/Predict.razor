@@ -1,5 +1,7 @@
 @page "/predict"
 @inject IPredictionService PredictionService
+@inject ICarDataService CarDataService
+@using CarPricePredictor.Web.Data
 
 <PageTitle>Car Price Prediction</PageTitle>
 
@@ -13,12 +15,29 @@
 
             <div class="mb-3">
                 <label for="make" class="form-label">Brand (Make)</label>
-                <InputText id="make" class="form-control" @bind-Value="carInput.Make" placeholder="e.g., Audi, BMW, Mercedes" />
+                <InputSelect id="make" class="form-control" @bind-Value="carInput.Make" @onchange="OnBrandChanged">
+                    <option value="">-- Select Brand --</option>
+                    @foreach (var brand in brandModels.Keys
+                        .OrderBy(b => b.Equals("Others", StringComparison.OrdinalIgnoreCase) ? 1 : 0)
+                        .ThenBy(b => b))
+                    {
+                        <option value="@brand">@brand</option>
+                    }
+                </InputSelect>
             </div>
 
             <div class="mb-3">
                 <label for="model" class="form-label">Model</label>
-                <InputText id="model" class="form-control" @bind-Value="carInput.Model" placeholder="e.g., A4, 3 Series, C-Class" />
+                <InputSelect id="model" class="form-control" @bind-Value="carInput.Model" disabled="@(string.IsNullOrEmpty(carInput.Make))">
+                    <option value="">-- Select Model --</option>
+                    @if (!string.IsNullOrEmpty(carInput.Make) && brandModels.ContainsKey(carInput.Make))
+                    {
+                        @foreach (var model in brandModels[carInput.Make])
+                        {
+                            <option value="@model">@model</option>
+                        }
+                    }
+                </InputSelect>
             </div>
 
             <div class="mb-3">
@@ -152,21 +171,22 @@
 </div>
 
 @code {
-    private CarInputModel carInput = new CarInputModel
-    {
-        Make = "Audi",
-        Model = "A4",
-        Year = 2018,
-        Mileage = 50000,
-        Fuel = "Diesel",
-        Gear = "Automatic",
-        Hp = 150,
-        OfferType = (float)OfferType.Used,
-        Price = 25000
-    };
-
+    private CarInputModel carInput = new CarInputModel();
     private PredictionResultModel? result;
     private bool showResult = false;
+    private Dictionary<string, List<string>> brandModels = new();
+
+    protected override void OnInitialized()
+    {
+        // Load brand/model data from service (which may load from dataset or fallback to hardcoded)
+        brandModels = CarDataService.GetBrandModels();
+    }
+
+    private void OnBrandChanged(ChangeEventArgs e)
+    {
+        carInput.Make = e.Value?.ToString() ?? string.Empty;
+        carInput.Model = string.Empty; // Reset model when brand changes
+    }
 
     private void HandlePredict()
     {

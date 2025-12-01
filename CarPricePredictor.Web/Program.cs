@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<IPredictionService, MLPredictionService>();
+builder.Services.AddSingleton<ICarDataService, CarDataService>();
 
 var app = builder.Build();
 
