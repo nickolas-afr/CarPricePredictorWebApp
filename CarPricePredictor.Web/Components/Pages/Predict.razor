@@ -41,13 +41,35 @@
             </div>
 
             <div class="mb-3">
-                <label for="year" class="form-label">Production Year</label>
-                <InputNumber id="year" class="form-control" @bind-Value="carInput.Year" />
+                <label for="year" class="form-label">Production Year: <strong>@carInput.Year</strong></label>
+                <div class="row g-2 align-items-center">
+                    <div class="col-9">
+                        <input type="range" id="year" class="form-range" min="1990" max="@DateTime.Now.Year" step="1" @bind="carInput.Year" @bind:event="oninput" />
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">1990</small>
+                            <small class="text-muted">@DateTime.Now.Year</small>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <InputNumber id="yearInput" class="form-control" @bind-Value="carInput.Year" min="1990" max="@DateTime.Now.Year" />
+                    </div>
+                </div>
             </div>
 
             <div class="mb-3">
-                <label for="mileage" class="form-label">Mileage (km)</label>
-                <InputNumber id="mileage" class="form-control" @bind-Value="carInput.Mileage" />
+                <label for="mileage" class="form-label">Mileage: <strong>@carInput.Mileage.ToString("N0") km</strong></label>
+                <div class="row g-2 align-items-center">
+                    <div class="col-9">
+                        <input type="range" id="mileage" class="form-range" min="0" max="500000" step="5000" @bind="carInput.Mileage" @bind:event="oninput" />
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">0 km</small>
+                            <small class="text-muted">500,000 km</small>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <InputNumber id="mileageInput" class="form-control" @bind-Value="carInput.Mileage" min="0" max="500000" />
+                    </div>
+                </div>
             </div>
 
             <div class="mb-3">
@@ -73,8 +95,19 @@
             </div>
 
             <div class="mb-3">
-                <label for="hp" class="form-label">Horsepower (HP)</label>
-                <InputNumber id="hp" class="form-control" @bind-Value="carInput.Hp" />
+                <label for="hp" class="form-label">Horsepower: <strong>@carInput.Hp HP</strong></label>
+                <div class="row g-2 align-items-center">
+                    <div class="col-9">
+                        <input type="range" id="hp" class="form-range" min="50" max="500" step="5" @bind="carInput.Hp" @bind:event="oninput" />
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">50 HP</small>
+                            <small class="text-muted">500 HP</small>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <InputNumber id="hpInput" class="form-control" @bind-Value="carInput.Hp" min="50" max="1000" />
+                    </div>
+                </div>
             </div>
 
             <div class="mb-3">
@@ -180,6 +213,11 @@
     {
         // Load brand/model data from service (which may load from dataset or fallback to hardcoded)
         brandModels = CarDataService.GetBrandModels();
+        
+        // Set default values for sliders
+        carInput.Year = 2020;
+        carInput.Mileage = 50000;
+        carInput.Hp = 150;
     }
 
     private void OnBrandChanged(ChangeEventArgs e)
