@@ -11,10 +11,10 @@ A web application built with ASP.NET Core Blazor Server and ML.NET that predicts
 
 ## Technologies
 
-- **ASP.NET Core 8.0**: Web framework
+- **ASP.NET Core 10.0**: Web framework
 - **Blazor Server**: Interactive web UI
-- **ML.NET 3.0.1**: Machine learning framework
-- **Bootstrap 5**: Responsive UI design
+- **ML.NET 5.0.0**: Machine learning framework
+- **Bootstrap 5.3.8**: Responsive UI design
 
 ## Project Structure
 
@@ -26,8 +26,8 @@ A web application built with ASP.NET Core Blazor Server and ML.NET that predicts
 
 ### Prerequisites
 
-- .NET 8.0 SDK
-- Visual Studio 2022 or VS Code (optional)
+- .NET 10.0 SDK
+- Visual Studio 2026 or VS Code (optional)
 
 ### Step 1: Download Dataset
 
