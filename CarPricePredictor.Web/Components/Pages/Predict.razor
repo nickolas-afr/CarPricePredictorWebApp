@@ -1,20 +1,57 @@
 @page "/predict"
 @inject IPredictionService PredictionService
 @inject ICarDataService CarDataService
+@inject IVinDecoderService VinDecoderService
+@inject IDealScoreService DealScoreService
+@inject ILogger<Predict> Logger
 @using CarPricePredictor.Web.Data
+@using CarPricePredictor.Web.Models
 
 <PageTitle>Car Price Prediction</PageTitle>
 
 <h1>Car Price Prediction</h1>
 
+<!-- VIN Decoder Section -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">🔍 Quick VIN Decoder</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Enter a 17-character VIN to auto-populate car details</p>
+        <div class="row g-2">
+            <div class="col-md-8">
+                <input type="text" class="form-control" @bind="vinNumber" placeholder="Enter VIN (17 characters)" maxlength="17" />
+            </div>
+            <div class="col-md-4">
+                <button class="btn btn-primary w-100" @onclick="DecodeVin" disabled="@isDecodingVin">
+                    @if (isDecodingVin)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <span>Decoding...</span>
+                    }
+                    else
+                    {
+                        <span>Decode VIN</span>
+                    }
+                </button>
+            </div>
+        </div>
+        @if (!string.IsNullOrEmpty(vinMessage))
+        {
+            <div class="alert @(vinSuccess ? "alert-success" : "alert-danger") mt-2">
+                @vinMessage
+            </div>
+        }
+    </div>
+</div>
+
 <div class="row">
     <div class="col-md-6">
         <EditForm Model="@carInput" OnValidSubmit="@HandlePredict">
             <DataAnnotationsValidator />
-            <ValidationSummary />
 
             <div class="mb-3">
-                <label for="make" class="form-label">Brand (Make)</label>
+                <label for="make" class="form-label">Brand (Make) <span class="text-danger">*</span></label>
                 <InputSelect id="make" class="form-control" @bind-Value="carInput.Make" @onchange="OnBrandChanged">
                     <option value="">-- Select Brand --</option>
                     @foreach (var brand in brandModels.Keys
@@ -24,10 +61,11 @@
                         <option value="@brand">@brand</option>
                     }
                 </InputSelect>
+                <ValidationMessage For="@(() => carInput.Make)" />
             </div>
 
             <div class="mb-3">
-                <label for="model" class="form-label">Model</label>
+                <label for="model" class="form-label">Model <span class="text-danger">*</span></label>
                 <InputSelect id="model" class="form-control" @bind-Value="carInput.Model" disabled="@(string.IsNullOrEmpty(carInput.Make))">
                     <option value="">-- Select Model --</option>
                     @if (!string.IsNullOrEmpty(carInput.Make) && brandModels.ContainsKey(carInput.Make))
@@ -38,10 +76,11 @@
                         }
                     }
                 </InputSelect>
+                <ValidationMessage For="@(() => carInput.Model)" />
             </div>
 
             <div class="mb-3">
-                <label for="year" class="form-label">Production Year: <strong>@carInput.Year</strong></label>
+                <label for="year" class="form-label">Production Year: <strong>@carInput.Year</strong> <span class="text-danger">*</span></label>
                 <div class="row g-2 align-items-center">
                     <div class="col-9">
                         <input type="range" id="year" class="form-range" min="1990" max="@DateTime.Now.Year" step="1" @bind="carInput.Year" @bind:event="oninput" />
@@ -54,10 +93,11 @@
                         <InputNumber id="yearInput" class="form-control" @bind-Value="carInput.Year" min="1990" max="@DateTime.Now.Year" />
                     </div>
                 </div>
+                <ValidationMessage For="@(() => carInput.Year)" />
             </div>
 
             <div class="mb-3">
-                <label for="mileage" class="form-label">Mileage: <strong>@carInput.Mileage.ToString("N0") km</strong></label>
+                <label for="mileage" class="form-label">Mileage: <strong>@carInput.Mileage.ToString("N0") km</strong> <span class="text-danger">*</span></label>
                 <div class="row g-2 align-items-center">
                     <div class="col-9">
                         <input type="range" id="mileage" class="form-range" min="0" max="500000" step="5000" @bind="carInput.Mileage" @bind:event="oninput" />
@@ -70,6 +110,7 @@
                         <InputNumber id="mileageInput" class="form-control" @bind-Value="carInput.Mileage" min="0" max="500000" />
                     </div>
                 </div>
+                <ValidationMessage For="@(() => carInput.Mileage)" />
             </div>
 
             <div class="mb-3">
@@ -111,19 +152,32 @@
             </div>
 
             <div class="mb-3">
-                <label for="offerType" class="form-label">Offer Type</label>
+                <label for="offerType" class="form-label">Offer Type <span class="text-danger">*</span></label>
                 <InputSelect id="offerType" class="form-control" @bind-Value="carInput.OfferType">
-                    <option value="@((int)OfferType.Used)">Used</option>
-                    <option value="@((int)OfferType.New)">New</option>
+                    <option value="-1">-- Select Offer Type --</option>
+                    <option value="0">Used</option>
+                    <option value="1">New</option>
                 </InputSelect>
+                <ValidationMessage For="@(() => carInput.OfferType)" />
             </div>
 
             <div class="mb-3">
-                <label for="price" class="form-label">Asking Price (€)</label>
+                <label for="price" class="form-label">Asking Price (€) <span class="text-danger">*</span></label>
                 <InputNumber id="price" class="form-control" @bind-Value="carInput.Price" />
+                <ValidationMessage For="@(() => carInput.Price)" />
             </div>
 
-            <button type="submit" class="btn btn-primary">Check Price</button>
+            <button type="submit" class="btn btn-primary" disabled="@isPredicting">
+                @if (isPredicting)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    <span>Analyzing...</span>
+                }
+                else
+                {
+                    <span>Check Price</span>
+                }
+            </button>
         </EditForm>
     </div>
 
@@ -145,6 +199,12 @@
                     }
                     else
                     {
+                        <!-- Deal Score Gauge -->
+                        @if (dealScore != null)
+                        {
+                            <DealScoreGauge @ref="dealScoreGauge" DealScore="dealScore" />
+                        }
+
                         <h4>Price Analysis</h4>
                         <table class="table">
                             <tbody>
@@ -194,6 +254,15 @@
                 </div>
             </div>
         }
+        else if (isPredicting)
+        {
+            <div class="alert alert-info">
+                <div class="d-flex align-items-center">
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    <span>Analyzing car price and fetching market data...</span>
+                </div>
+            </div>
+        }
         else
         {
             <div class="alert alert-info">
@@ -206,18 +275,98 @@
 @code {
     private CarInputModel carInput = new CarInputModel();
     private PredictionResultModel? result;
+    private DealScore? dealScore;
+    private DealScoreGauge? dealScoreGauge;
     private bool showResult = false;
+    private bool isPredicting = false;
+    private bool isDecodingVin = false;
     private Dictionary<string, List<string>> brandModels = new();
+    
+    // VIN decoder fields
+    private string vinNumber = string.Empty;
+    private string vinMessage = string.Empty;
+    private bool vinSuccess = false;
 
     protected override void OnInitialized()
     {
         // Load brand/model data from service (which may load from dataset or fallback to hardcoded)
         brandModels = CarDataService.GetBrandModels();
         
-        // Set default values for sliders
-        carInput.Year = 2020;
-        carInput.Mileage = 50000;
-        carInput.Hp = 150;
+        // Set default values for sliders to avoid validation errors
+        carInput.Year = 1990; // Default to 5 years old
+        carInput.Mileage = 0;
+        carInput.Hp = 50;
+        carInput.OfferType = -1;
+    }
+
+    private async Task DecodeVin()
+    {
+        vinMessage = string.Empty;
+        vinSuccess = false;
+
+        if (string.IsNullOrWhiteSpace(vinNumber))
+        {
+            vinMessage = "Please enter a VIN number.";
+            return;
+        }
+
+        if (!VinDecoderService.IsValidVin(vinNumber))
+        {
+            vinMessage = "Invalid VIN format. VIN must be 17 characters and cannot contain I, O, or Q.";
+            return;
+        }
+
+        isDecodingVin = true;
+        StateHasChanged();
+
+        try
+        {
+            var vinResult = await VinDecoderService.DecodeVinAsync(vinNumber);
+
+            if (vinResult.Success)
+            {
+                // Auto-populate form fields
+                carInput.Make = vinResult.Make;
+                carInput.Model = vinResult.Model;
+                carInput.Year = vinResult.Year;
+                
+                // Map fuel type
+                if (!string.IsNullOrEmpty(vinResult.FuelType))
+                {
+                    carInput.Fuel = vinResult.FuelType;
+                }
+                
+                // Map transmission
+                if (!string.IsNullOrEmpty(vinResult.Transmission))
+                {
+                    carInput.Gear = vinResult.Transmission;
+                }
+                
+                // Map horsepower
+                if (vinResult.Horsepower > 0)
+                {
+                    carInput.Hp = vinResult.Horsepower;
+                }
+
+                vinMessage = "✓ VIN decoded successfully! Form fields have been populated.";
+                vinSuccess = true;
+            }
+            else
+            {
+                vinMessage = vinResult.ErrorMessage;
+                vinSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            vinMessage = $"Error decoding VIN: {ex.Message}";
+            vinSuccess = false;
+        }
+        finally
+        {
+            isDecodingVin = false;
+            StateHasChanged();
+        }
     }
 
     private void OnBrandChanged(ChangeEventArgs e)
@@ -226,10 +375,38 @@
         carInput.Model = string.Empty; // Reset model when brand changes
     }
 
-    private void HandlePredict()
+    private async Task HandlePredict()
     {
-        result = PredictionService.PredictPrice(carInput);
-        showResult = true;
+        isPredicting = true;
+        showResult = false;
+        StateHasChanged();
+
+        try
+        {
+            // Get price prediction
+            result = PredictionService.PredictPrice(carInput);
+            
+            // Calculate deal score (using only predicted price, no market data)
+            dealScore = DealScoreService.CalculateDealScore(result.PredictedPrice, carInput.Price, null);
+            
+            showResult = true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error during price prediction");
+            // Handle error gracefully
+            result = new PredictionResultModel
+            {
+                PriceStatus = "Error",
+                PredictedPrice = 0
+            };
+            showResult = true;
+        }
+        finally
+        {
+            isPredicting = false;
+            StateHasChanged();
+        }
     }
 
     private string GetStatusClass(string status)
