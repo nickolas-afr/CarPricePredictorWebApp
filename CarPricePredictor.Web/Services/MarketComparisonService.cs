@@ -50,7 +50,11 @@ public class MarketComparisonService : IMarketComparisonService
             if (response.IsSuccessStatusCode)
             {
                 var content = await response.Content.ReadAsStringAsync();
-                var listings = JsonSerializer.Deserialize<List<MarketListing>>(content);
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+                var listings = JsonSerializer.Deserialize<List<MarketListing>>(content, jsonOptions);
 
                 if (listings != null && listings.Any())
                 {

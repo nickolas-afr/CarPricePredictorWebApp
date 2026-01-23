@@ -4,6 +4,7 @@
 @inject IMarketComparisonService MarketComparisonService
 @inject IVinDecoderService VinDecoderService
 @inject IDealScoreService DealScoreService
+@inject ILogger<Predict> Logger
 @using CarPricePredictor.Web.Data
 @using CarPricePredictor.Web.Models
 
@@ -439,8 +440,9 @@
             
             showResult = true;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Error during price prediction");
             // Handle error gracefully
             result = new PredictionResultModel
             {

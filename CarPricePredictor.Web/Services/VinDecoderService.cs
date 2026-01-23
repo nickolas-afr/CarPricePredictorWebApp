@@ -71,7 +71,11 @@ public class VinDecoderService : IVinDecoderService
             if (response.IsSuccessStatusCode)
             {
                 var content = await response.Content.ReadAsStringAsync();
-                var vinData = JsonSerializer.Deserialize<VinDecodeResult>(content);
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+                var vinData = JsonSerializer.Deserialize<VinDecodeResult>(content, jsonOptions);
 
                 if (vinData != null)
                 {
