@@ -13,18 +13,20 @@ A web application built with ASP.NET Core Blazor Server and ML.NET that predicts
 ### New Features
 
 #### 🌐 Market Comparison
-Compare your car's predicted price against real market listings from European marketplaces.
-- Fetches similar vehicles from AutoScout24, Mobile.de, and other sources via Carapis API
+Compare your car's predicted price against simulated market listings.
+- Generates realistic market data based on your car's characteristics
 - Shows 3-5 similar listings with prices and sources
 - Displays average market price
 - Compares your asking price to market average with percentage difference
 - Automatically matches based on make, model, year (±2 years), and mileage (±15,000 km)
+- **Note:** Uses simulated data as free car listing APIs are not publicly available
 
 #### 🔍 VIN Decoder
 Quickly populate car details by entering a VIN (Vehicle Identification Number).
 - 17-character VIN validation (no I, O, or Q characters)
 - Auto-populates: Make, Model, Year, Trim, Engine, Transmission, Fuel Type, Body Type
-- Integrates with Carapis VIN decoder API
+- **Uses FREE NHTSA vPIC API** - No API key required
+- Decodes real VIN numbers with official government data
 - Shows success/error feedback
 - Saves time on data entry
 
@@ -55,7 +57,7 @@ Visual gauge showing whether you're getting a good deal.
 - **ML.NET 5.0.0**: Machine learning framework
 - **Bootstrap 5.3.8**: Responsive UI design
 - **Chart.js 4.4.1**: Deal score gauge visualization
-- **Carapis API**: Market data and VIN decoding
+- **NHTSA vPIC API**: Free VIN decoding (no API key required)
 
 ## Project Structure
 
@@ -95,44 +97,7 @@ Copy the generated `CarPriceModel.zip` file to:
 CarPricePredictor.Web/wwwroot/MLModels/CarPriceModel.zip
 ```
 
-### Step 4: Configure Carapis API (Optional)
-
-The application uses the Carapis API for market comparison and VIN decoding features. While the app works without an API key (using mock data), you can get real market data by:
-
-1. **Get an API Key:**
-   - Visit [Carapis.com](https://carapis.com) and sign up for an account
-   - Generate an API key from your dashboard
-   - Free tier available for testing
-
-2. **Configure the API Key:**
-   
-   **Option A - appsettings.json (Development):**
-   ```json
-   {
-     "Carapis": {
-       "ApiKey": "your-actual-api-key-here",
-       "BaseUrl": "https://api.carapis.com/v1"
-     }
-   }
-   ```
-
-   **Option B - Environment Variables (Production):**
-   ```bash
-   export Carapis__ApiKey="your-actual-api-key-here"
-   export Carapis__BaseUrl="https://api.carapis.com/v1"
-   ```
-
-   **Option C - User Secrets (Recommended for Development):**
-   ```bash
-   cd CarPricePredictor.Web
-   dotnet user-secrets set "Carapis:ApiKey" "your-actual-api-key-here"
-   ```
-
-3. **Restart the Application** for changes to take effect.
-
-**Note:** Without a valid API key, the application will use mock data for demonstrations. All features will still work, but market comparison data will be simulated.
-
-### Step 5: Run the Web Application
+### Step 4: Run the Web Application
 
 ```bash
 cd CarPricePredictor.Web
@@ -196,16 +161,22 @@ The deal score (0-100) is calculated by comparing the asking price to the predic
 
 ## API Integration
 
-### Carapis API
-The application integrates with Carapis for:
-- **Market Comparison**: Fetches real-time listings from European marketplaces
-- **VIN Decoding**: Decodes VIN numbers to auto-populate car details
+### NHTSA vPIC API (VIN Decoder)
+The application uses the **FREE** NHTSA (National Highway Traffic Safety Administration) vPIC API for VIN decoding:
+- **No API key required** - Completely free to use
+- **No rate limits** for reasonable usage
+- Provides official vehicle data from the U.S. Department of Transportation
 
-**Endpoints Used:**
-- `GET /v1/listings/search` - Search for similar car listings
-- `GET /v1/vin/decode/{vin}` - Decode VIN number
+**Endpoint Used:**
+- `GET https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/{vin}?format=json`
 
-**API Documentation:** [Carapis API Docs](https://carapis.com/docs)
+**API Documentation:** [NHTSA vPIC API Docs](https://vpic.nhtsa.dot.gov/api/)
+
+### Market Comparison
+Market comparison uses **simulated data** as free car listing APIs are not publicly available. The simulation:
+- Generates realistic listings based on your car's characteristics
+- Provides average market price estimates
+- Helps evaluate deal quality without requiring external API access
 
 ## Configuration
 
@@ -219,17 +190,16 @@ The application integrates with Carapis for:
     }
   },
   "AllowedHosts": "*",
-  "Carapis": {
-    "ApiKey": "your-carapis-api-key-here",
-    "BaseUrl": "https://api.carapis.com/v1"
+  "VinDecoder": {
+    "BaseUrl": "https://vpic.nhtsa.dot.gov/api/vehicles",
+    "UseMockData": false
   }
 }
 ```
 
-### Environment Variables
-For production deployments, use environment variables:
-- `Carapis__ApiKey`: Your Carapis API key
-- `Carapis__BaseUrl`: Carapis API base URL (default: https://api.carapis.com/v1)
+### Configuration Options
+- `VinDecoder:BaseUrl`: NHTSA API base URL (default: https://vpic.nhtsa.dot.gov/api/vehicles)
+- `VinDecoder:UseMockData`: Set to `true` to use mock data instead of real API (for testing)
 
 ## Architecture
 
@@ -258,8 +228,8 @@ CarPricePredictorWebApp/
 
 ### Services
 - **IPredictionService**: ML.NET price prediction
-- **IMarketComparisonService**: Carapis market data integration
-- **IVinDecoderService**: VIN decoding and validation
+- **IMarketComparisonService**: Simulated market data generation
+- **IVinDecoderService**: VIN decoding via NHTSA vPIC API
 - **IDealScoreService**: Deal score calculation
 - **ICarDataService**: Car brand/model data
 
@@ -283,11 +253,11 @@ If you see "Model Not Available" error:
 3. Restart the application
 
 ### API Features Not Working
-If market comparison or VIN decoder shows errors:
-1. Check that you have a valid Carapis API key configured
-2. Verify internet connectivity
-3. Check API key hasn't exceeded rate limits
-4. Review application logs for detailed error messages
+If VIN decoder shows errors:
+1. Verify internet connectivity (NHTSA API requires internet access)
+2. Check that the VIN is valid (17 characters, no I/O/Q)
+3. Review application logs for detailed error messages
+4. Try enabling mock data mode by setting `VinDecoder:UseMockData` to `true` in appsettings.json
 
 ### Dark Mode Not Persisting
 If theme doesn't persist between sessions:

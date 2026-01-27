@@ -21,71 +21,16 @@ public class MarketComparisonService : IMarketComparisonService
 
     public async Task<MarketComparisonResult> GetMarketComparisonAsync(CarInputModel input)
     {
-        var result = new MarketComparisonResult();
+        // Note: Real car listing APIs (AutoScout24, Mobile.de, etc.) are paid or restricted.
+        // This implementation uses enhanced mock data to simulate market comparison.
+        // The mock data is generated based on the input car's characteristics.
+        
+        _logger.LogInformation("Generating market comparison data for {Make} {Model} {Year}", 
+            input.Make, input.Model, input.Year);
 
-        try
-        {
-            var apiKey = _configuration["Carapis:ApiKey"];
-            
-            if (string.IsNullOrEmpty(apiKey) || apiKey == "your-carapis-api-key-here")
-            {
-                _logger.LogWarning("Carapis API key not configured. Using mock data.");
-                return GetMockMarketData(input);
-            }
+        await Task.Delay(100); // Simulate API call delay for better UX
 
-            var httpClient = _httpClientFactory.CreateClient();
-            httpClient.DefaultRequestHeaders.Add("X-API-Key", apiKey);
-
-            // Carapis API endpoint for searching listings
-            var baseUrl = _configuration["Carapis:BaseUrl"] ?? "https://api.carapis.com/v1";
-            var yearMin = input.Year - 2;
-            var yearMax = input.Year + 2;
-            var mileageMin = Math.Max(0, input.Mileage - 15000);
-            var mileageMax = input.Mileage + 15000;
-
-            var url = $"{baseUrl}/listings/search?make={Uri.EscapeDataString(input.Make)}&model={Uri.EscapeDataString(input.Model)}&year_min={yearMin}&year_max={yearMax}&mileage_min={mileageMin}&mileage_max={mileageMax}&limit=5";
-
-            var response = await httpClient.GetAsync(url);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var content = await response.Content.ReadAsStringAsync();
-                var jsonOptions = new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                };
-                var listings = JsonSerializer.Deserialize<List<MarketListing>>(content, jsonOptions);
-
-                if (listings != null && listings.Any())
-                {
-                    result.Listings = listings.Take(5).ToList();
-                    result.AverageMarketPrice = result.Listings.Average(l => l.Price);
-                    result.HasData = true;
-
-                    if (input.Price > 0)
-                    {
-                        result.PriceComparisonPercentage = 
-                            ((input.Price - result.AverageMarketPrice) / result.AverageMarketPrice) * 100;
-                    }
-                }
-                else
-                {
-                    result.ErrorMessage = "No similar listings found in the market.";
-                }
-            }
-            else
-            {
-                _logger.LogError("Carapis API returned error: {StatusCode}", response.StatusCode);
-                result.ErrorMessage = "Unable to fetch market data at this time.";
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching market comparison data");
-            result.ErrorMessage = "An error occurred while fetching market data.";
-        }
-
-        return result;
+        return GetMockMarketData(input);
     }
 
     private MarketComparisonResult GetMockMarketData(CarInputModel input)
