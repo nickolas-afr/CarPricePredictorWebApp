@@ -12,15 +12,6 @@ A web application built with ASP.NET Core Blazor Server and ML.NET that predicts
 
 ### New Features
 
-#### 🌐 Market Comparison
-Compare your car's predicted price against simulated market listings.
-- Generates realistic market data based on your car's characteristics
-- Shows 3-5 similar listings with prices and sources
-- Displays average market price
-- Compares your asking price to market average with percentage difference
-- Automatically matches based on make, model, year (±2 years), and mileage (±15,000 km)
-- **Note:** Uses simulated data as free car listing APIs are not publicly available
-
 #### 🔍 VIN Decoder
 Quickly populate car details by entering a VIN (Vehicle Identification Number).
 - 17-character VIN validation (no I, O, or Q characters)
@@ -131,7 +122,6 @@ Visit `https://localhost:5001` or `http://localhost:5000` in your browser.
 5. View comprehensive results:
    - **Deal Score Gauge**: Visual indicator of deal quality
    - **Price Analysis**: Predicted price vs. asking price
-   - **Market Comparison**: Real listings from European marketplaces
    - **Price Range**: Typical market range for similar cars
    - **Recommendation**: Clear verdict on the deal
 
@@ -154,7 +144,7 @@ Visit `https://localhost:5001` or `http://localhost:5000` in your browser.
   - **Too Low**: Below 85% of predicted price
 
 ### Deal Score Calculation
-The deal score (0-100) is calculated by comparing the asking price to the predicted price and market average:
+The deal score (0-100) is calculated by comparing the asking price to the predicted price:
 - **70-100 (Green)**: Great Deal / Good Deal
 - **30-70 (Yellow)**: Fair Price / Slightly High
 - **0-30 (Red)**: Overpriced / Very Overpriced
@@ -171,12 +161,6 @@ The application uses the **FREE** NHTSA (National Highway Traffic Safety Adminis
 - `GET https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/{vin}?format=json`
 
 **API Documentation:** [NHTSA vPIC API Docs](https://vpic.nhtsa.dot.gov/api/)
-
-### Market Comparison
-Market comparison uses **simulated data** as free car listing APIs are not publicly available. The simulation:
-- Generates realistic listings based on your car's characteristics
-- Provides average market price estimates
-- Helps evaluate deal quality without requiring external API access
 
 ## Configuration
 
@@ -217,7 +201,6 @@ CarPricePredictorWebApp/
 │   ├── Models/                     # Data models
 │   ├── Services/                   # Business logic services
 │   │   ├── MLPredictionService.cs
-│   │   ├── MarketComparisonService.cs
 │   │   ├── VinDecoderService.cs
 │   │   └── DealScoreService.cs
 │   └── wwwroot/
@@ -228,7 +211,6 @@ CarPricePredictorWebApp/
 
 ### Services
 - **IPredictionService**: ML.NET price prediction
-- **IMarketComparisonService**: Simulated market data generation
 - **IVinDecoderService**: VIN decoding via NHTSA vPIC API
 - **IDealScoreService**: Deal score calculation
 - **ICarDataService**: Car brand/model data

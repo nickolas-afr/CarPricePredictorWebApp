@@ -1,7 +1,6 @@
 @page "/predict"
 @inject IPredictionService PredictionService
 @inject ICarDataService CarDataService
-@inject IMarketComparisonService MarketComparisonService
 @inject IVinDecoderService VinDecoderService
 @inject IDealScoreService DealScoreService
 @inject ILogger<Predict> Logger
@@ -224,55 +223,6 @@
                             </tbody>
                         </table>
 
-                        <!-- Market Comparison -->
-                        @if (marketComparison != null && marketComparison.HasData)
-                        {
-                            <h4>📊 Market Comparison</h4>
-                            <div class="alert alert-info">
-                                <strong>Average Market Price:</strong> €@marketComparison.AverageMarketPrice.ToString("N2")
-                                @if (marketComparison.PriceComparisonPercentage != 0)
-                                {
-                                    <br />
-                                    <span>Your price is <strong>@Math.Abs(marketComparison.PriceComparisonPercentage).ToString("N1")%</strong> 
-                                        @(marketComparison.PriceComparisonPercentage > 0 ? "above" : "below") the market average</span>
-                                }
-                            </div>
-                            
-                            @if (marketComparison.Listings.Any())
-                            {
-                                <h5>Similar Listings:</h5>
-                                <div class="table-responsive">
-                                    <table class="table table-sm">
-                                        <thead>
-                                            <tr>
-                                                <th>Source</th>
-                                                <th>Year</th>
-                                                <th>Mileage</th>
-                                                <th>Price</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach (var listing in marketComparison.Listings)
-                                            {
-                                                <tr>
-                                                    <td>@listing.Source</td>
-                                                    <td>@listing.Year</td>
-                                                    <td>@listing.Mileage.ToString("N0") km</td>
-                                                    <td>€@listing.Price.ToString("N2")</td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            }
-                        }
-                        else if (!string.IsNullOrEmpty(marketComparison?.ErrorMessage))
-                        {
-                            <div class="alert alert-warning">
-                                @marketComparison.ErrorMessage
-                            </div>
-                        }
-
                         <h4>Typical Price Range</h4>
                         <div class="alert alert-info">
                             <p>
@@ -325,7 +275,6 @@
 @code {
     private CarInputModel carInput = new CarInputModel();
     private PredictionResultModel? result;
-    private MarketComparisonResult? marketComparison;
     private DealScore? dealScore;
     private DealScoreGauge? dealScoreGauge;
     private bool showResult = false;
@@ -431,12 +380,8 @@
             // Get price prediction
             result = PredictionService.PredictPrice(carInput);
             
-            // Get market comparison data
-            marketComparison = await MarketComparisonService.GetMarketComparisonAsync(carInput);
-            
-            // Calculate deal score
-            var marketAvg = marketComparison?.HasData == true ? marketComparison.AverageMarketPrice : (float?)null;
-            dealScore = DealScoreService.CalculateDealScore(result.PredictedPrice, carInput.Price, marketAvg);
+            // Calculate deal score (using only predicted price, no market data)
+            dealScore = DealScoreService.CalculateDealScore(result.PredictedPrice, carInput.Price, null);
             
             showResult = true;
         }
