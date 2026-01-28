@@ -5,8 +5,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+builder.Services.AddHttpClient();
 builder.Services.AddSingleton<IPredictionService, MLPredictionService>();
 builder.Services.AddSingleton<ICarDataService, CarDataService>();
+builder.Services.AddScoped<IVinDecoderService, VinDecoderService>();
+builder.Services.AddScoped<IDealScoreService, DealScoreService>();
 
 var app = builder.Build();
 

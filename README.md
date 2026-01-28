@@ -4,10 +4,42 @@ A web application built with ASP.NET Core Blazor Server and ML.NET that predicts
 
 ## Features
 
+### Core Features
 - **Price Analysis**: Input car details and get instant feedback on pricing
 - **ML-Powered**: Uses ML.NET for predictions based on real car market data
 - **Price Range**: Shows typical price range for similar cars
 - **User-Friendly**: Clean Blazor Server interface for easy interaction
+
+### New Features
+
+#### 🔍 VIN Decoder
+Quickly populate car details by entering a VIN (Vehicle Identification Number).
+- 17-character VIN validation (no I, O, or Q characters)
+- Auto-populates: Make, Model, Year, Trim, Engine, Transmission, Fuel Type, Body Type
+- **Uses FREE NHTSA vPIC API** - No API key required
+- Decodes real VIN numbers with official government data
+- Shows success/error feedback
+- Saves time on data entry
+
+#### 🌙 Dark Mode
+Switch between light and dark themes for comfortable viewing.
+- Toggle button in the navigation bar
+- Persists preference in browser localStorage
+- Respects system preference (prefers-color-scheme) as default
+- Smooth transitions between themes
+- All components optimized for both themes
+
+#### 📊 Deal Score Gauge
+Visual gauge showing whether you're getting a good deal.
+- Semi-circular Chart.js gauge visualization
+- Score calculation based on:
+  - Predicted price vs. asking price
+  - Market average comparison (when available)
+- Color-coded zones:
+  - 🟢 Green (70-100%): Good Deal / Great Deal
+  - 🟡 Yellow (30-70%): Fair Price / Slightly High
+  - 🔴 Red (0-30%): Overpriced / Very Overpriced
+- Descriptive labels and recommendations
 
 ## Technologies
 
@@ -15,6 +47,8 @@ A web application built with ASP.NET Core Blazor Server and ML.NET that predicts
 - **Blazor Server**: Interactive web UI
 - **ML.NET 5.0.0**: Machine learning framework
 - **Bootstrap 5.3.8**: Responsive UI design
+- **Chart.js 4.4.1**: Deal score gauge visualization
+- **NHTSA vPIC API**: Free VIN decoding (no API key required)
 
 ## Project Structure
 
@@ -70,8 +104,11 @@ Visit `https://localhost:5001` or `http://localhost:5000` in your browser.
 
 ## Usage
 
+### Price Prediction
+
 1. Navigate to the "Price Prediction" page
-2. Enter car details:
+2. **(Optional)** Enter a 17-character VIN and click "Decode VIN" to auto-populate fields
+3. Enter or verify car details:
    - Brand (Make)
    - Model
    - Production Year
@@ -81,25 +118,134 @@ Visit `https://localhost:5001` or `http://localhost:5000` in your browser.
    - Horsepower
    - Offer Type (New/Used)
    - Asking Price
-3. Click "Check Price"
-4. View the prediction result:
-   - **Good Price**: Within fair market range (±15%)
-   - **Too High**: Above market value
-   - **Too Low**: Below market value
+4. Click "Check Price"
+5. View comprehensive results:
+   - **Deal Score Gauge**: Visual indicator of deal quality
+   - **Price Analysis**: Predicted price vs. asking price
+   - **Price Range**: Typical market range for similar cars
+   - **Recommendation**: Clear verdict on the deal
 
-## Model Details
+### Dark Mode
 
-The ML model uses:
+- Click the 🌙/☀️ icon in the top navigation bar to toggle between light and dark themes
+- Your preference is automatically saved
+- Theme respects your system preference by default
+
+## Price Determination Logic
+
+### ML Model Prediction
 - **Algorithm**: FastTree Regression
 - **Features**: Make, Model, Mileage, Fuel Type, Transmission, Horsepower, Year
 - **Target**: Price prediction in Euros
 - **Accuracy**: R-Squared and RMSE metrics shown during training
+- **Price Classification**:
+  - **Good Price**: Within 85%-115% of predicted price
+  - **Too High**: Above 115% of predicted price
+  - **Too Low**: Below 85% of predicted price
 
-## Price Determination Logic
+### Deal Score Calculation
+The deal score (0-100) is calculated by comparing the asking price to the predicted price:
+- **70-100 (Green)**: Great Deal / Good Deal
+- **30-70 (Yellow)**: Fair Price / Slightly High
+- **0-30 (Red)**: Overpriced / Very Overpriced
 
-- **Good Price**: Within 85%-115% of predicted price
-- **Too High**: Above 115% of predicted price
-- **Too Low**: Below 85% of predicted price
+## API Integration
+
+### NHTSA vPIC API (VIN Decoder)
+The application uses the **FREE** NHTSA (National Highway Traffic Safety Administration) vPIC API for VIN decoding:
+- **No API key required** - Completely free to use
+- **No rate limits** for reasonable usage
+- Provides official vehicle data from the U.S. Department of Transportation
+
+**Endpoint Used:**
+- `GET https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/{vin}?format=json`
+
+**API Documentation:** [NHTSA vPIC API Docs](https://vpic.nhtsa.dot.gov/api/)
+
+## Configuration
+
+### appsettings.json Structure
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "VinDecoder": {
+    "BaseUrl": "https://vpic.nhtsa.dot.gov/api/vehicles",
+    "UseMockData": false
+  }
+}
+```
+
+### Configuration Options
+- `VinDecoder:BaseUrl`: NHTSA API base URL (default: https://vpic.nhtsa.dot.gov/api/vehicles)
+- `VinDecoder:UseMockData`: Set to `true` to use mock data instead of real API (for testing)
+
+## Architecture
+
+### Project Structure
+```
+CarPricePredictorWebApp/
+├── CarPricePredictor.ML/          # ML model training console app
+│   ├── Data/                       # Training datasets
+│   └── Program.cs                  # Model training logic
+├── CarPricePredictor.Web/         # Blazor Server web app
+│   ├── Components/
+│   │   ├── Layout/                 # Layout components
+│   │   ├── Pages/                  # Page components
+│   │   └── DealScoreGauge.razor   # Deal score visualization
+│   ├── Models/                     # Data models
+│   ├── Services/                   # Business logic services
+│   │   ├── MLPredictionService.cs
+│   │   ├── VinDecoderService.cs
+│   │   └── DealScoreService.cs
+│   └── wwwroot/
+│       ├── css/site.css           # Themed styles
+│       └── js/theme.js            # Dark mode toggle
+└── README.md
+```
+
+### Services
+- **IPredictionService**: ML.NET price prediction
+- **IVinDecoderService**: VIN decoding via NHTSA vPIC API
+- **IDealScoreService**: Deal score calculation
+- **ICarDataService**: Car brand/model data
+
+## Dependencies
+
+### NuGet Packages
+- `Microsoft.ML` (5.0.0) - Machine learning framework
+- `Microsoft.ML.FastTree` (5.0.0) - FastTree algorithm
+
+### CDN Resources
+- Bootstrap 5.3.8 - UI framework
+- Bootstrap Icons 1.11.3 - Icon library
+- Chart.js 4.4.1 - Gauge visualization
+
+## Troubleshooting
+
+### ML Model Not Found
+If you see "Model Not Available" error:
+1. Ensure you've trained the model using `CarPricePredictor.ML`
+2. Copy `CarPriceModel.zip` to `CarPricePredictor.Web/wwwroot/MLModels/`
+3. Restart the application
+
+### API Features Not Working
+If VIN decoder shows errors:
+1. Verify internet connectivity (NHTSA API requires internet access)
+2. Check that the VIN is valid (17 characters, no I/O/Q)
+3. Review application logs for detailed error messages
+4. Try enabling mock data mode by setting `VinDecoder:UseMockData` to `true` in appsettings.json
+
+### Dark Mode Not Persisting
+If theme doesn't persist between sessions:
+1. Check browser localStorage is enabled
+2. Clear browser cache and try again
+3. Check browser console for JavaScript errors
 
 ## License
 
