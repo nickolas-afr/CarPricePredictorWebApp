@@ -11,18 +11,32 @@
 </div>
 
 @code {
-    [Parameter]
-    public Models.DealScore DealScore { get; set; } = new();
+[Parameter]
+public Models.DealScore DealScore { get; set; } = new();
 
-    private string canvasId = $"dealScoreGauge_{Guid.NewGuid():N}";
+private string canvasId = $"dealScoreGauge_{Guid.NewGuid():N}";
+private bool hasRendered = false;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+    if (firstRender)
     {
-        if (firstRender)
-        {
-            await RenderGauge();
-        }
+        hasRendered = true;
     }
+        
+    if (hasRendered)
+    {
+        await RenderGauge();
+    }
+}
+
+protected override async Task OnParametersSetAsync()
+{
+    if (hasRendered)
+    {
+        await RenderGauge();
+    }
+}
 
     private async Task RenderGauge()
     {
