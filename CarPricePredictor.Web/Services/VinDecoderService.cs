@@ -136,6 +136,12 @@ public class VinDecoderService : IVinDecoderService
             result.Year = year;
         }
 
+        // Parse horsepower from engine_horsepower
+        if (!string.IsNullOrEmpty(response.EngineHorsepower) && float.TryParse(response.EngineHorsepower, out float horsepower))
+        {
+            result.Horsepower = horsepower;
+        }
+
         // Map fuel type
         result.FuelType = MapFuelType(response.FuelType ?? "");
 
@@ -210,7 +216,8 @@ public class VinDecoderService : IVinDecoderService
             Engine = "2.0L Turbo I4",
             Transmission = "Automatic",
             FuelType = "Petrol",
-            BodyType = "Sedan"
+            BodyType = "Sedan",
+            Horsepower = 255
         };
     }
 }

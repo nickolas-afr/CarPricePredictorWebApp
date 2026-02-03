@@ -14,4 +14,5 @@ public class VinDecodeResult
     public string Transmission { get; set; } = string.Empty;
     public string FuelType { get; set; } = string.Empty;
     public string BodyType { get; set; } = string.Empty;
+    public float Horsepower { get; set; }
 }

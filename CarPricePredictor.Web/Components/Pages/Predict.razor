@@ -341,6 +341,12 @@
                 {
                     carInput.Gear = vinResult.Transmission;
                 }
+                
+                // Map horsepower
+                if (vinResult.Horsepower > 0)
+                {
+                    carInput.Hp = vinResult.Horsepower;
+                }
 
                 vinMessage = "✓ VIN decoded successfully! Form fields have been populated.";
                 vinSuccess = true;
