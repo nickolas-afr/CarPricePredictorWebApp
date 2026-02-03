@@ -1,0 +1,142 @@
+@inject IJSRuntime JSRuntime
+
+<div class="deal-score-container">
+    <div class="gauge-wrapper">
+        <canvas id="@canvasId"></canvas>
+    </div>
+    <div class="text-center mt-2">
+        <h4>@DealScore.Label</h4>
+        <p class="text-muted">@DealScore.Description</p>
+    </div>
+</div>
+
+@code {
+[Parameter]
+public Models.DealScore DealScore { get; set; } = new();
+
+private string canvasId = $"dealScoreGauge_{Guid.NewGuid():N}";
+private bool hasRendered = false;
+
+protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+    if (firstRender)
+    {
+        hasRendered = true;
+    }
+        
+    if (hasRendered)
+    {
+        await RenderGauge();
+    }
+}
+
+protected override async Task OnParametersSetAsync()
+{
+    if (hasRendered)
+    {
+        await RenderGauge();
+    }
+}
+
+    private async Task RenderGauge()
+    {
+        var script = $@"
+        (function() {{
+            const ctx = document.getElementById('{canvasId}');
+            if (!ctx) return;
+            
+            // Destroy existing chart if it exists
+            const existingChart = Chart.getChart(ctx);
+            if (existingChart) {{
+                existingChart.destroy();
+            }}
+            
+            const score = {DealScore.Score.ToString(System.Globalization.CultureInfo.InvariantCulture)};
+            
+            new Chart(ctx, {{
+                type: 'doughnut',
+                data: {{
+                    datasets: [{{
+                        data: [score, 100 - score],
+                        backgroundColor: [
+                            score >= 70 ? '#10b981' : score >= 30 ? '#f59e0b' : '#ef4444',
+                            '#e5e7eb'
+                        ],
+                        borderWidth: 0,
+                        circumference: 180,
+                        rotation: 270
+                    }}]
+                }},
+                options: {{
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 1.5,
+                    plugins: {{
+                        legend: {{
+                            display: false
+                        }},
+                        tooltip: {{
+                            enabled: false
+                        }}
+                    }},
+                    cutout: '75%'
+                }},
+                plugins: [{{
+                    afterDraw: (chart) => {{
+                        const {{ ctx, chartArea: {{ top, bottom, left, right, width, height }} }} = chart;
+                        ctx.save();
+                        
+                        const centerX = (left + right) / 2;
+                        const centerY = (top + bottom) / 2 + 20;
+                        
+                        ctx.font = 'bold 36px Inter';
+                        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-primary') || '#212529';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(Math.round(score), centerX, centerY);
+                        
+                        ctx.font = '14px Inter';
+                        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary') || '#6c757d';
+                        ctx.fillText('Deal Score', centerX, centerY + 25);
+                        
+                        ctx.restore();
+                    }}
+                }}]
+            }});
+        }})();
+        ";
+
+        await JSRuntime.InvokeVoidAsync("eval", script);
+    }
+
+    public async Task UpdateScore(Models.DealScore newScore)
+    {
+        DealScore = newScore;
+        await RenderGauge();
+        StateHasChanged();
+    }
+}
+
+<style>
+.deal-score-container {
+    margin: 20px 0;
+    padding: 20px;
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.gauge-wrapper {
+    width: 100%;
+    max-width: 300px;
+    height: 200px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.gauge-wrapper canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+</style>

@@ -1,7 +1,49 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
+/* CSS Variables for Theming */
+:root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --accent-color: #5300b5;
+    --accent-hover: #6b00e8;
+    --border-color: #dee2e6;
+    --link-color: #0071c1;
+    --sidebar-bg: rgba(0, 27, 133, 0.85);
+    --card-bg: #ffffff;
+    --input-bg: #ffffff;
+    --input-border: #ced4da;
+    --success-color: #198754;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0;
+}
+
+[data-theme="dark"] {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --text-primary: #e9ecef;
+    --text-secondary: #adb5bd;
+    --accent-color: #7c3aed;
+    --accent-hover: #8b5cf6;
+    --border-color: #495057;
+    --link-color: #60a5fa;
+    --sidebar-bg: rgba(31, 41, 55, 0.95);
+    --card-bg: #2d2d2d;
+    --input-bg: #374151;
+    --input-border: #4b5563;
+    --success-color: #10b981;
+    --danger-color: #ef4444;
+    --warning-color: #f59e0b;
+    --info-color: #06b6d4;
+}
+
 html, body {
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 h1:focus {
@@ -9,13 +51,18 @@ h1:focus {
 }
 
 a, .btn-link {
-    color: #0071c1;
+    color: var(--link-color);
 }
 
 .btn-primary {
     color: #fff;
-    background-color: #5300b5;
-    border-color: #1861ac;
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--accent-hover);
+    border-color: var(--accent-hover);
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
@@ -46,25 +93,25 @@ a, .btn-link {
 .form-range::-webkit-slider-thumb {
     width: 1.25rem;
     height: 1.25rem;
-    background-color: #5300b5;
+    background-color: var(--accent-color);
     border: 2px solid #fff;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .form-range::-webkit-slider-thumb:hover {
-    background-color: #6b00e8;
+    background-color: var(--accent-hover);
 }
 
 .form-range::-moz-range-thumb {
     width: 1.25rem;
     height: 1.25rem;
-    background-color: #5300b5;
+    background-color: var(--accent-color);
     border: 2px solid #fff;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .form-range::-moz-range-thumb:hover {
-    background-color: #6b00e8;
+    background-color: var(--accent-hover);
 }
 
 .form-range:focus::-webkit-slider-thumb {
@@ -115,7 +162,7 @@ main {
 }
 
 .sidebar {
-    background-color: rgba(0, 27, 133, 0.85);
+    background-color: var(--sidebar-bg);
 }
 
 .sidebar .top-row {
@@ -148,8 +195,8 @@ main {
 }
 
 .top-row {
-    background-color: rgba(0, 27, 133, 0.85);
-    border-bottom: 1px solid #d6d5d5;
+    background-color: var(--sidebar-bg);
+    border-bottom: 1px solid var(--border-color);
     justify-content: flex-end;
     height: 3.5rem;
     display: flex;
@@ -269,6 +316,72 @@ main {
 }
 
 .navbar-dark {
-    background-color: rgba(0, 27, 133, 0.85);
+    background-color: var(--sidebar-bg);
     color: white;
+}
+
+/* Card theming */
+.card {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.card-header {
+    border-bottom-color: var(--border-color);
+}
+
+/* Form theming */
+.form-control, .form-select {
+    background-color: var(--input-bg);
+    border-color: var(--input-border);
+    color: var(--text-primary);
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--input-bg);
+    color: var(--text-primary);
+    border-color: var(--accent-color);
+}
+
+/* Table theming */
+.table {
+    color: var(--text-primary);
+}
+
+/* Alert theming */
+.alert-info {
+    background-color: var(--info-color);
+    border-color: var(--info-color);
+}
+
+.alert-success {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.alert-warning {
+    background-color: var(--warning-color);
+    border-color: var(--warning-color);
+}
+
+.alert-danger {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+/* Theme toggle button */
+.theme-toggle {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    margin-right: 1rem;
+    transition: opacity 0.2s;
+}
+
+.theme-toggle:hover {
+    opacity: 0.8;
 }
