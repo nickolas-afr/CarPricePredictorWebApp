@@ -60,12 +60,25 @@ public class VinDecoderService : IVinDecoderService
                 return GetMockVinData(vin);
             }
 
-            // Use NHTSA vPIC API (free, no API key required)
-            var httpClient = _httpClientFactory.CreateClient();
-            var baseUrl = _configuration["VinDecoder:BaseUrl"] ?? "https://vpic.nhtsa.dot.gov/api/vehicles";
-            var url = $"{baseUrl}/DecodeVin/{vin}?format=json";
+            // Use RapidAPI VIN Decoder Europe2 (for European cars)
+            var apiKey = _configuration["VinDecoder:ApiKey"];
+            
+            if (string.IsNullOrEmpty(apiKey) || apiKey == "API_KEY_PLACEHOLDER")
+            {
+                _logger.LogWarning("RapidAPI key not configured. Using mock VIN decoder.");
+                return GetMockVinData(vin);
+            }
 
-            _logger.LogInformation("Decoding VIN using NHTSA vPIC API: {Vin}", vin);
+            var httpClient = _httpClientFactory.CreateClient();
+            var apiHost = _configuration["VinDecoder:ApiHost"] ?? "vin-decoder-europe2.p.rapidapi.com";
+            var baseUrl = _configuration["VinDecoder:BaseUrl"] ?? "https://vin-decoder-europe2.p.rapidapi.com";
+            var url = $"{baseUrl}/vin_decoder?vin={vin}";
+
+            // Add RapidAPI headers
+            httpClient.DefaultRequestHeaders.Add("x-rapidapi-key", apiKey);
+            httpClient.DefaultRequestHeaders.Add("x-rapidapi-host", apiHost);
+
+            _logger.LogInformation("Decoding VIN using RapidAPI VIN Decoder Europe2: {Vin}", vin);
             var response = await httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
@@ -75,23 +88,23 @@ public class VinDecoderService : IVinDecoderService
                 {
                     PropertyNameCaseInsensitive = true
                 };
-                var nhtsaResponse = JsonSerializer.Deserialize<NhtsaVinResponse>(content, jsonOptions);
+                var rapidApiResponse = JsonSerializer.Deserialize<RapidApiVinResponse>(content, jsonOptions);
 
-                if (nhtsaResponse?.Results != null && nhtsaResponse.Results.Count > 0)
+                if (rapidApiResponse != null && !string.IsNullOrEmpty(rapidApiResponse.Make))
                 {
-                    result = MapNhtsaToVinDecodeResult(nhtsaResponse.Results);
+                    result = MapRapidApiToVinDecodeResult(rapidApiResponse);
                     result.Success = true;
                     _logger.LogInformation("Successfully decoded VIN: {Make} {Model} {Year}", result.Make, result.Model, result.Year);
                     return result;
                 }
                 else
                 {
-                    result.ErrorMessage = "Unable to decode VIN. No data returned from NHTSA.";
+                    result.ErrorMessage = "Unable to decode VIN. No data returned from API.";
                 }
             }
             else
             {
-                _logger.LogError("NHTSA VIN decode API returned error: {StatusCode}", response.StatusCode);
+                _logger.LogError("VIN decode API returned error: {StatusCode}", response.StatusCode);
                 result.ErrorMessage = "Unable to decode VIN at this time. Please try again later.";
             }
         }
@@ -104,81 +117,62 @@ public class VinDecoderService : IVinDecoderService
         return result;
     }
 
-    private VinDecodeResult MapNhtsaToVinDecodeResult(List<NhtsaVariable> variables)
+    private VinDecodeResult MapRapidApiToVinDecodeResult(RapidApiVinResponse response)
     {
-        var result = new VinDecodeResult();
-
-        foreach (var variable in variables)
+        var result = new VinDecodeResult
         {
-            if (string.IsNullOrEmpty(variable.Value))
-                continue;
+            Make = response.Make ?? "",
+            Model = response.Model ?? "",
+            Trim = response.Trim ?? "",
+            Engine = response.Engine ?? "",
+            Transmission = response.Transmission ?? "",
+            BodyType = response.BodyType ?? ""
+        };
 
-            switch (variable.Variable?.ToLower())
-            {
-                case "make":
-                    result.Make = variable.Value;
-                    break;
-                case "model":
-                    result.Model = variable.Value;
-                    break;
-                case "model year":
-                    if (int.TryParse(variable.Value, out int year))
-                        result.Year = year;
-                    break;
-                case "trim":
-                    result.Trim = variable.Value;
-                    break;
-                case "engine number of cylinders":
-                    result.Engine = variable.Value;
-                    break;
-                case "transmission style":
-                    result.Transmission = variable.Value;
-                    break;
-                case "fuel type - primary":
-                    result.FuelType = MapFuelType(variable.Value);
-                    break;
-                case "body class":
-                    result.BodyType = variable.Value;
-                    break;
-            }
+        // Parse year
+        if (int.TryParse(response.Year, out int year))
+        {
+            result.Year = year;
         }
+
+        // Map fuel type
+        result.FuelType = MapFuelType(response.FuelType ?? "");
 
         return result;
     }
 
-    private string MapFuelType(string nhtsaFuelType)
+    private string MapFuelType(string fuelType)
     {
-        if (string.IsNullOrEmpty(nhtsaFuelType))
+        if (string.IsNullOrEmpty(fuelType))
             return "";
 
-        var lowerFuelType = nhtsaFuelType.ToLower();
+        var lowerFuelType = fuelType.ToLower();
         
-        if (lowerFuelType.Contains("gasoline"))
+        if (lowerFuelType.Contains("gasoline") || lowerFuelType.Contains("petrol") || lowerFuelType.Contains("benzin"))
             return "Petrol";
         if (lowerFuelType.Contains("diesel"))
             return "Diesel";
-        if (lowerFuelType.Contains("electric"))
+        if (lowerFuelType.Contains("electric") || lowerFuelType.Contains("elektro"))
             return "Electric";
         if (lowerFuelType.Contains("hybrid"))
             return "Hybrid";
-        if (lowerFuelType.Contains("compressed natural gas") || lowerFuelType.Contains("cng"))
+        if (lowerFuelType.Contains("compressed natural gas") || lowerFuelType.Contains("cng") || lowerFuelType.Contains("erdgas"))
             return "CNG";
         
-        return nhtsaFuelType;
+        return fuelType;
     }
 
-    // NHTSA API response models
-    private class NhtsaVinResponse
+    // RapidAPI VIN Decoder Europe2 response model
+    private class RapidApiVinResponse
     {
-        public int Count { get; set; }
-        public string? Message { get; set; }
-        public List<NhtsaVariable> Results { get; set; } = new();
-    }
-
-    private class NhtsaVariable
-    {
-        public string? Variable { get; set; }
-        public string? Value { get; set; }
+        public string? Make { get; set; }
+        public string? Model { get; set; }
+        public string? Year { get; set; }
+        public string? Trim { get; set; }
+        public string? Engine { get; set; }
+        public string? Transmission { get; set; }
+        public string? FuelType { get; set; }
+        public string? BodyType { get; set; }
     }
 
     private VinDecodeResult GetMockVinData(string vin)

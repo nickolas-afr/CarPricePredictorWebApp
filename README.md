@@ -16,8 +16,8 @@ A web application built with ASP.NET Core Blazor Server and ML.NET that predicts
 Quickly populate car details by entering a VIN (Vehicle Identification Number).
 - 17-character VIN validation (no I, O, or Q characters)
 - Auto-populates: Make, Model, Year, Trim, Engine, Transmission, Fuel Type, Body Type
-- **Uses FREE NHTSA vPIC API** - No API key required
-- Decodes real VIN numbers with official government data
+- **Uses RapidAPI VIN Decoder Europe2** - Optimized for European cars
+- Decodes European VIN numbers with accurate data
 - Shows success/error feedback
 - Saves time on data entry
 
@@ -48,7 +48,7 @@ Visual gauge showing whether you're getting a good deal.
 - **ML.NET 5.0.0**: Machine learning framework
 - **Bootstrap 5.3.8**: Responsive UI design
 - **Chart.js 4.4.1**: Deal score gauge visualization
-- **NHTSA vPIC API**: Free VIN decoding (no API key required)
+- **RapidAPI VIN Decoder Europe2**: European VIN decoding
 
 ## Project Structure
 
@@ -151,16 +151,24 @@ The deal score (0-100) is calculated by comparing the asking price to the predic
 
 ## API Integration
 
-### NHTSA vPIC API (VIN Decoder)
-The application uses the **FREE** NHTSA (National Highway Traffic Safety Administration) vPIC API for VIN decoding:
-- **No API key required** - Completely free to use
-- **No rate limits** for reasonable usage
-- Provides official vehicle data from the U.S. Department of Transportation
+### RapidAPI VIN Decoder Europe2
+The application uses **RapidAPI VIN Decoder Europe2** for VIN decoding, optimized for European cars:
+- **Requires API key** - Sign up at [RapidAPI](https://rapidapi.com/hub)
+- **Free tier available** - Suitable for personal projects with reasonable limits
+- Provides accurate vehicle data for European cars
+- Better coverage for European manufacturers (BMW, Mercedes, Audi, etc.)
 
 **Endpoint Used:**
-- `GET https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/{vin}?format=json`
+- `GET https://vin-decoder-europe2.p.rapidapi.com/vin_decoder?vin={vin}`
+- Headers: `x-rapidapi-key`, `x-rapidapi-host`
 
-**API Documentation:** [NHTSA vPIC API Docs](https://vpic.nhtsa.dot.gov/api/)
+**API Setup:**
+1. Visit [RapidAPI VIN Decoder Europe2](https://rapidapi.com/dataproviders/api/vin-decoder-europe2)
+2. Subscribe to the free plan
+3. Copy your API key
+4. Configure in appsettings.json or environment variables (see Configuration section below)
+
+**API Documentation:** [RapidAPI VIN Decoder Europe2](https://rapidapi.com/dataproviders/api/vin-decoder-europe2)
 
 ## Configuration
 
@@ -175,15 +183,33 @@ The application uses the **FREE** NHTSA (National Highway Traffic Safety Adminis
   },
   "AllowedHosts": "*",
   "VinDecoder": {
-    "BaseUrl": "https://vpic.nhtsa.dot.gov/api/vehicles",
+    "BaseUrl": "https://vin-decoder-europe2.p.rapidapi.com",
+    "ApiHost": "vin-decoder-europe2.p.rapidapi.com",
+    "ApiKey": "your-rapidapi-key-here",
     "UseMockData": false
   }
 }
 ```
 
 ### Configuration Options
-- `VinDecoder:BaseUrl`: NHTSA API base URL (default: https://vpic.nhtsa.dot.gov/api/vehicles)
+- `VinDecoder:BaseUrl`: RapidAPI endpoint (default: https://vin-decoder-europe2.p.rapidapi.com)
+- `VinDecoder:ApiHost`: RapidAPI host header (default: vin-decoder-europe2.p.rapidapi.com)
+- `VinDecoder:ApiKey`: Your RapidAPI key (required for real VIN decoding)
 - `VinDecoder:UseMockData`: Set to `true` to use mock data instead of real API (for testing)
+
+### Environment Variables (Production)
+For production deployments, use environment variables:
+```bash
+export VinDecoder__ApiKey="your-rapidapi-key-here"
+export VinDecoder__ApiHost="vin-decoder-europe2.p.rapidapi.com"
+export VinDecoder__BaseUrl="https://vin-decoder-europe2.p.rapidapi.com"
+```
+
+### User Secrets (Recommended for Development)
+```bash
+cd CarPricePredictor.Web
+dotnet user-secrets set "VinDecoder:ApiKey" "your-rapidapi-key-here"
+```
 
 ## Architecture
 
@@ -211,7 +237,7 @@ CarPricePredictorWebApp/
 
 ### Services
 - **IPredictionService**: ML.NET price prediction
-- **IVinDecoderService**: VIN decoding via NHTSA vPIC API
+- **IVinDecoderService**: VIN decoding via RapidAPI VIN Decoder Europe2
 - **IDealScoreService**: Deal score calculation
 - **ICarDataService**: Car brand/model data
 
@@ -236,10 +262,14 @@ If you see "Model Not Available" error:
 
 ### API Features Not Working
 If VIN decoder shows errors:
-1. Verify internet connectivity (NHTSA API requires internet access)
-2. Check that the VIN is valid (17 characters, no I/O/Q)
-3. Review application logs for detailed error messages
-4. Try enabling mock data mode by setting `VinDecoder:UseMockData` to `true` in appsettings.json
+1. Verify you have a valid RapidAPI key configured in `VinDecoder:ApiKey`
+2. Check internet connectivity (RapidAPI requires internet access)
+3. Ensure you haven't exceeded your RapidAPI rate limits
+4. Verify the VIN is valid (17 characters, no I/O/Q)
+5. Try enabling mock data mode by setting `VinDecoder:UseMockData` to `true` in appsettings.json
+6. Review application logs for detailed error messages
+
+**Note:** Without a valid API key, the application will automatically use mock data for demonstrations.
 
 ### Dark Mode Not Persisting
 If theme doesn't persist between sessions:
