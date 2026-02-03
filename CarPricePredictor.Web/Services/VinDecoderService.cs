@@ -1,5 +1,6 @@
 using CarPricePredictor.Web.Models;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace CarPricePredictor.Web.Services;
@@ -90,7 +91,7 @@ public class VinDecoderService : IVinDecoderService
                 };
                 var rapidApiResponse = JsonSerializer.Deserialize<RapidApiVinResponse>(content, jsonOptions);
 
-                if (rapidApiResponse != null && !string.IsNullOrEmpty(rapidApiResponse.Make))
+                if (rapidApiResponse != null && rapidApiResponse.Code == 200 && !string.IsNullOrEmpty(rapidApiResponse.Make))
                 {
                     result = MapRapidApiToVinDecodeResult(rapidApiResponse);
                     result.Success = true;
@@ -123,14 +124,14 @@ public class VinDecoderService : IVinDecoderService
         {
             Make = response.Make ?? "",
             Model = response.Model ?? "",
-            Trim = response.Trim ?? "",
-            Engine = response.Engine ?? "",
-            Transmission = response.Transmission ?? "",
+            Trim = response.BodyStyle ?? "", // Use body_style as trim
+            Engine = response.EngineType ?? "", // Use engine_type for engine info
+            Transmission = response.Driveline ?? "", // Use driveline (FWD/RWD/AWD) as best available
             BodyType = response.BodyType ?? ""
         };
 
-        // Parse year
-        if (int.TryParse(response.Year, out int year))
+        // Parse year from model_year
+        if (int.TryParse(response.ModelYear, out int year))
         {
             result.Year = year;
         }
@@ -165,14 +166,35 @@ public class VinDecoderService : IVinDecoderService
     // RapidAPI VIN Decoder Europe2 response model
     private class RapidApiVinResponse
     {
+        [JsonPropertyName("code")]
+        public int Code { get; set; }
+        
+        [JsonPropertyName("make")]
         public string? Make { get; set; }
+        
+        [JsonPropertyName("model")]
         public string? Model { get; set; }
-        public string? Year { get; set; }
-        public string? Trim { get; set; }
-        public string? Engine { get; set; }
-        public string? Transmission { get; set; }
+        
+        [JsonPropertyName("model_year")]
+        public string? ModelYear { get; set; }
+        
+        [JsonPropertyName("body_style")]
+        public string? BodyStyle { get; set; }
+        
+        [JsonPropertyName("engine_type")]
+        public string? EngineType { get; set; }
+        
+        [JsonPropertyName("fuel_type")]
         public string? FuelType { get; set; }
+        
+        [JsonPropertyName("body_type")]
         public string? BodyType { get; set; }
+        
+        [JsonPropertyName("engine_horsepower")]
+        public string? EngineHorsepower { get; set; }
+        
+        [JsonPropertyName("driveline")]
+        public string? Driveline { get; set; }
     }
 
     private VinDecodeResult GetMockVinData(string vin)
