@@ -743,12 +743,17 @@ main {
     align-items: center;
     padding: 0 var(--spacing-lg);
     gap: var(--spacing-md);
+    flex-wrap: nowrap;
 }
 
 .sidebar .top-row .bi {
     font-size: var(--font-size-2xl);
     color: white;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    line-height: 1;
+    margin: 0 var(--spacing-sm);
 }
 
 .sidebar .top-row .navbar-brand {
@@ -757,6 +762,11 @@ main {
     font-size: var(--font-size-lg);
     text-decoration: none;
     letter-spacing: -0.025em;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    line-height: 1;
+    margin: 0;
 }
 
 .sidebar .top-row .navbar-brand:hover {

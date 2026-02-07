@@ -10,7 +10,7 @@
             setTheme(savedTheme);
         } else {
             // Check system preference
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const prefersDark = window.matchMedia('(prefers-color-scheme: light)').matches;
             setTheme(prefersDark ? 'dark' : 'light');
         }
     }
