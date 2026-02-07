@@ -38,7 +38,7 @@ Visual gauge showing whether you're getting a good deal.
 - Color-coded zones:
   - Green (70-100%): Good Deal / Great Deal
   - Yellow (30-70%): Fair Price / Slightly High
-  - ~~~~Red (0-30%): Overpriced / Very Overpriced
+  - Red (0-30%): Overpriced / Very Overpriced
 - Descriptive labels and recommendations
 
 ## Technologies
