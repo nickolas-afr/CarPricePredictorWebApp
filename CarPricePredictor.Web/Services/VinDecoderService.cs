@@ -124,16 +124,10 @@ public class VinDecoderService : IVinDecoderService
 
     private VinDecodeResult MapRapidApiToVinDecodeResult(RapidApiVinResponse response)
     {
-        var make = response.Make ?? "";
-        var model = response.Model ?? "";
-        
-        // Try to match the model against existing car models
-        var matchedModel = MatchModelToExistingModels(make, model);
-        
         var result = new VinDecodeResult
         {
-            Make = make,
-            Model = matchedModel,
+            Make = response.Make ?? "",
+            Model = response.Model ?? "",
             Trim = response.BodyStyle ?? "", // Use body_style as trim
             Engine = response.EngineType ?? "", // Use engine_type for engine info
             Transmission = response.Driveline ?? "", // Use driveline (FWD/RWD/AWD) as best available
@@ -156,46 +150,6 @@ public class VinDecoderService : IVinDecoderService
         result.FuelType = MapFuelType(response.FuelType ?? "");
 
         return result;
-    }
-
-    private string MatchModelToExistingModels(string make, string decodedModel)
-    {
-        var carBrandData = _carDataService.GetBrandModels();
-        if (string.IsNullOrWhiteSpace(decodedModel))
-            return decodedModel;
-
-        // Get available models for the make
-        if (!carBrandData.TryGetValue(make, out var availableModels))
-        {
-            _logger.LogWarning("Make '{Make}' not found in car brand data", make);
-            return decodedModel;
-        }
-
-        // First, try exact match (case-insensitive)
-        var exactMatch = availableModels.FirstOrDefault(m => 
-            string.Equals(m, decodedModel, StringComparison.OrdinalIgnoreCase));
-        
-        if (!string.IsNullOrEmpty(exactMatch))
-        {
-            _logger.LogInformation("Exact match found for model '{DecodedModel}': '{ExactMatch}'", decodedModel, exactMatch);
-            return exactMatch;
-        }
-
-        // If no exact match, check if any existing model is contained in the decoded model
-        // Sort by length descending to prefer longer matches (e.g., "C 250" over "C")
-        var substringMatch = availableModels
-            .OrderByDescending(m => m.Length)
-            .FirstOrDefault(m => decodedModel.Contains(m, StringComparison.OrdinalIgnoreCase));
-
-        if (!string.IsNullOrEmpty(substringMatch))
-        {
-            _logger.LogInformation("Substring match found for model '{DecodedModel}': '{SubstringMatch}'", decodedModel, substringMatch);
-            return substringMatch;
-        }
-
-        // No match found, return original decoded model
-        _logger.LogWarning("No match found for decoded model '{DecodedModel}' in make '{Make}'", decodedModel, make);
-        return decodedModel;
     }
 
     private string MapFuelType(string fuelType)

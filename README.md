@@ -38,7 +38,7 @@ Visual gauge showing whether you're getting a good deal.
 - Color-coded zones:
   - Green (70-100%): Good Deal / Great Deal
   - Yellow (30-70%): Fair Price / Slightly High
-  - ~~~~Red (0-30%): Overpriced / Very Overpriced
+  - Red (0-30%): Overpriced / Very Overpriced
 - Descriptive labels and recommendations
 
 ## Technologies
@@ -88,7 +88,44 @@ Copy the generated `CarPriceModel.zip` file to:
 CarPricePredictor.Web/wwwroot/MLModels/CarPriceModel.zip
 ```
 
-### Step 4: Run the Web Application
+### Step 4: Configure Carapis API (Optional)
+
+The application uses the Carapis API for market comparison and VIN decoding features. While the app works without an API key (using mock data), you can get real market data by:
+
+1. **Get an API Key:**
+   - Visit [Carapis.com](https://carapis.com) and sign up for an account
+   - Generate an API key from your dashboard
+   - Free tier available for testing
+
+2. **Configure the API Key:**
+   
+   **Option A - appsettings.json (Development):**
+   ```json
+   {
+     "Carapis": {
+       "ApiKey": "your-actual-api-key-here",
+       "BaseUrl": "https://api.carapis.com/v1"
+     }
+   }
+   ```
+
+   **Option B - Environment Variables (Production):**
+   ```bash
+   export Carapis__ApiKey="your-actual-api-key-here"
+   export Carapis__BaseUrl="https://api.carapis.com/v1"
+   ```
+
+   **Option C - User Secrets (Recommended for Development):**
+   ```bash
+   cd CarPricePredictor.Web
+   dotnet user-secrets set "Carapis:ApiKey" "your-actual-api-key-here"
+   ```
+
+3. **Restart the Application** for changes to take effect.
+
+**Note:** Without a valid API key, the application will use mock data for demonstrations. All features will still work, but market comparison data will be simulated.
+
+### Step 5: Run the Web Application
 
 ```bash
 cd CarPricePredictor.Web
