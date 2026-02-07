@@ -12,7 +12,7 @@ A web application built with ASP.NET Core Blazor Server and ML.NET that predicts
 
 ### New Features
 
-#### 🔍 VIN Decoder
+#### VIN Decoder
 Quickly populate car details by entering a VIN (Vehicle Identification Number).
 - 17-character VIN validation (no I, O, or Q characters)
 - Auto-populates: Make, Model, Year, Trim, Engine, Transmission, Fuel Type, Body Type
@@ -21,7 +21,7 @@ Quickly populate car details by entering a VIN (Vehicle Identification Number).
 - Shows success/error feedback
 - Saves time on data entry
 
-#### 🌙 Dark Mode
+#### Dark Mode
 Switch between light and dark themes for comfortable viewing.
 - Toggle button in the navigation bar
 - Persists preference in browser localStorage
@@ -29,16 +29,16 @@ Switch between light and dark themes for comfortable viewing.
 - Smooth transitions between themes
 - All components optimized for both themes
 
-#### 📊 Deal Score Gauge
+#### Deal Score Gauge
 Visual gauge showing whether you're getting a good deal.
 - Semi-circular Chart.js gauge visualization
 - Score calculation based on:
   - Predicted price vs. asking price
   - Market average comparison (when available)
 - Color-coded zones:
-  - 🟢 Green (70-100%): Good Deal / Great Deal
-  - 🟡 Yellow (30-70%): Fair Price / Slightly High
-  - 🔴 Red (0-30%): Overpriced / Very Overpriced
+  - Green (70-100%): Good Deal / Great Deal
+  - Yellow (30-70%): Fair Price / Slightly High
+  - ~~~~Red (0-30%): Overpriced / Very Overpriced
 - Descriptive labels and recommendations
 
 ## Technologies

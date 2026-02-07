@@ -171,8 +171,9 @@ main {
     justify-content: flex-start;
     height: 3.5rem;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     flex-wrap: nowrap;
+    gap: 0.75rem;
 }
 
 .sidebar .top-row .bi {
@@ -370,18 +371,125 @@ main {
     border-color: var(--danger-color);
 }
 
+/* Navbar layout */
+.navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.nav-link-top {
+    color: white !important;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    white-space: nowrap;
+}
+
+.nav-link-top:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    text-decoration: none;
+}
+
 /* Theme toggle button */
 .theme-toggle {
-    background: transparent;
-    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
     color: white;
-    font-size: 1.2rem;
     cursor: pointer;
     padding: 0.5rem;
-    margin-right: 1rem;
-    transition: opacity 0.2s;
+    width: 40px;
+    height: 40px;
+    margin-left:20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    position: relative;
 }
 
 .theme-toggle:hover {
-    opacity: 0.8;
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.theme-toggle:active {
+    transform: scale(0.95);
+}
+
+/* Theme toggle in main content area */
+.theme-toggle-main {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.theme-toggle-main:hover {
+    background: var(--bg-primary);
+    border-color: var(--accent-color);
+    transform: scale(1.05);
+}
+
+.theme-icon {
+    position: absolute;
+    transition: all 0.3s ease;
+}
+
+/* Show sun icon in light mode, moon in dark mode */
+:root .theme-icon-moon {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+}
+
+:root .theme-icon-sun {
+    opacity: 0;
+    transform: rotate(90deg) scale(0);
+}
+
+[data-theme="dark"] .theme-icon-sun {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+}
+
+[data-theme="dark"] .theme-icon-moon {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640.98px) {
+    .navbar-left {
+        gap: 0.5rem;
+    }
+
+    .navbar-right {
+        gap: 0.25rem;
+    }
+
+    .nav-link-top {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.85rem;
+    }
+
+    .theme-toggle {
+        width: 36px;
+        height: 36px;
+        padding: 0.4rem;
+    }
+
+    .sidebar .top-row .navbar-brand {
+        font-size: 0.85rem;
+    }
 }
