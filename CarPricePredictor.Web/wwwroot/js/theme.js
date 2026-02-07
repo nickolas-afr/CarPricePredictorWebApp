@@ -20,11 +20,16 @@
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('theme', theme);
         
-        // Update toggle button icon if it exists
-        const toggleBtn = document.querySelector('.theme-toggle');
-        if (toggleBtn) {
-            toggleBtn.innerHTML = theme === 'dark' ? '☀️' : '🌙';
-            toggleBtn.setAttribute('aria-label', 
+        // Sync the iOS toggle checkbox state
+        const checkbox = document.getElementById('theme-checkbox');
+        if (checkbox) {
+            checkbox.checked = theme === 'dark';
+        }
+        
+        // Update aria-label for accessibility
+        const toggle = document.querySelector('.ios-toggle');
+        if (toggle) {
+            toggle.setAttribute('aria-label', 
                 theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
         }
     }

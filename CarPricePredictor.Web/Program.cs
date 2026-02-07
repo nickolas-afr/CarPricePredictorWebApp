@@ -2,6 +2,9 @@ using CarPricePredictor.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Load secrets configuration (for API keys - excluded from source control)
+builder.Configuration.AddJsonFile("appsettings.Secrets.json", optional: true, reloadOnChange: true);
+
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();

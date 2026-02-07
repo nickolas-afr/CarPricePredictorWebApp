@@ -94,6 +94,13 @@ _ReSharper*/
 
 # Dataset files (optional - uncomment if you don't want to track large CSV files)
 # *.csv
+
+# Secrets and API keys
+**/appsettings.Secrets.json
+appsettings.Secrets.json
+
 CarPricePredictor.Web/wwwroot/.DS_Store
 .DS_Store
 CarPricePredictor.Web/wwwroot/MLModels/
+CarPricePredictor.Web/appsettings.Secrets.json
+CarPricePredictor.Web/appsettings.Secrets.json

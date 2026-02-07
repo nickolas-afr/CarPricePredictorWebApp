@@ -252,6 +252,23 @@ p {
     margin-bottom: var(--spacing-md);
 }
 
+/* Inline Code */
+code {
+    padding: 0.2em 0.4em;
+    margin: 0;
+    font-size: 0.875em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    background-color: var(--bg-tertiary);
+    color: var(--accent-color);
+    border-radius: var(--radius-sm);
+}
+
+/* Strong/Bold text */
+strong, b {
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+}
+
 /* Links */
 a {
     color: var(--link-color);
@@ -360,6 +377,16 @@ a:hover {
 
 .form-control::placeholder {
     color: var(--text-tertiary);
+}
+
+/* Disabled Form Controls */
+.form-control:disabled,
+.form-select:disabled {
+    background-color: var(--bg-tertiary);
+    color: var(--text-tertiary);
+    border-color: var(--border-color);
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
 .form-check-input:focus {
@@ -515,10 +542,19 @@ a:hover {
    7. TABLE STYLES
    ========================================================================== */
 
+/* Override Bootstrap table variables */
 .table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text-primary);
+    --bs-table-border-color: var(--border-color);
+    --bs-table-striped-bg: var(--bg-secondary);
+    --bs-table-striped-color: var(--text-primary);
+    --bs-table-hover-bg: var(--bg-tertiary);
+    --bs-table-hover-color: var(--text-primary);
     width: 100%;
     margin-bottom: var(--spacing-md);
     color: var(--text-primary);
+    background-color: transparent;
     border-collapse: collapse;
 }
 
@@ -527,6 +563,8 @@ a:hover {
     padding: 0.75rem;
     vertical-align: top;
     border-bottom: 1px solid var(--border-color);
+    background-color: transparent;
+    color: inherit;
 }
 
 .table th {
@@ -538,12 +576,84 @@ a:hover {
     letter-spacing: 0.05em;
 }
 
+.table td {
+    color: var(--text-primary);
+}
+
 .table tbody tr {
     transition: background-color var(--transition-fast);
+    background-color: transparent;
 }
 
 .table tbody tr:hover {
     background-color: var(--bg-secondary);
+}
+
+/* Table within cards (Price Analysis) */
+.card-body .table {
+    --bs-table-bg: transparent;
+    background-color: transparent;
+    margin-bottom: 0;
+}
+
+.card-body .table th,
+.card-body .table td {
+    background-color: transparent !important;
+    border-bottom-color: var(--border-color);
+}
+
+.card-body .table th {
+    text-transform: none;
+    font-size: var(--font-size-base);
+    color: var(--text-secondary);
+    white-space: nowrap;
+    width: 40%;
+    letter-spacing: normal;
+}
+
+.card-body .table td {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.card-body .table tbody tr {
+    background-color: transparent;
+}
+
+.card-body .table tbody tr:hover {
+    background-color: var(--bg-tertiary);
+}
+
+/* Dark theme table overrides with high specificity */
+[data-theme="dark"] .table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text-primary);
+    --bs-table-border-color: var(--border-color);
+    --bs-table-hover-bg: var(--bg-tertiary);
+    --bs-table-hover-color: var(--text-primary);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .table th,
+[data-theme="dark"] .table td {
+    background-color: transparent !important;
+    border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .table th {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .table td {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .card-body .table th {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .card-body .table td {
+    color: var(--text-primary);
 }
 
 /* ==========================================================================
@@ -786,68 +896,135 @@ main {
    11. THEME TOGGLE
    ========================================================================== */
 
-.theme-toggle {
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: var(--radius-lg);
-    color: white;
-    cursor: pointer;
-    padding: var(--spacing-sm);
-    width: var(--button-size-md);
-    height: var(--button-size-md);
-    margin-left: var(--spacing-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all var(--transition-fast);
+/* Toggle Container */
+.ios-toggle {
     position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    margin-left: var(--spacing-md);
 }
 
-.theme-toggle:hover {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: rgba(255, 255, 255, 0.35);
-    transform: scale(1.05);
-}
-
-.theme-toggle:active {
-    transform: scale(0.98);
-}
-
-.theme-toggle-main {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-}
-
-.theme-toggle-main:hover {
-    background: var(--bg-tertiary);
-    border-color: var(--accent-color);
-    transform: scale(1.05);
-}
-
-.theme-icon {
+/* Hide the default checkbox */
+.ios-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
     position: absolute;
-    transition: all var(--transition-base);
 }
 
-:root .theme-icon-moon {
+/* The slider track */
+.ios-toggle-slider {
+    position: relative;
+    width: 50px;
+    height: 28px;
+    background: linear-gradient(180deg, #e8e8e8 0%, #d0d0d0 100%);
+    border-radius: 28px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+        inset 0 1px 3px rgba(0, 0, 0, 0.15),
+        0 1px 2px rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Dark theme track */
+[data-theme="dark"] .ios-toggle-slider {
+    background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%);
+    box-shadow: 
+        inset 0 1px 3px rgba(0, 0, 0, 0.2),
+        0 1px 2px rgba(255, 255, 255, 0.1),
+        0 0 8px rgba(74, 222, 128, 0.3);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+/* The sliding knob */
+.ios-toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    left: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
+    border-radius: 50%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.2),
+        0 1px 2px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    z-index: 2;
+}
+
+/* Move knob when checked (dark mode) */
+[data-theme="dark"] .ios-toggle-slider::before {
+    transform: translateY(-50%) translateX(22px);
+}
+
+/* Hover effect */
+.ios-toggle:hover .ios-toggle-slider {
+    box-shadow: 
+        inset 0 1px 3px rgba(0, 0, 0, 0.15),
+        0 1px 2px rgba(255, 255, 255, 0.8),
+        0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .ios-toggle:hover .ios-toggle-slider {
+    box-shadow: 
+        inset 0 1px 3px rgba(0, 0, 0, 0.2),
+        0 1px 2px rgba(255, 255, 255, 0.1),
+        0 0 12px rgba(74, 222, 128, 0.4),
+        0 0 0 3px rgba(74, 222, 128, 0.15);
+}
+
+/* Active/pressed effect */
+.ios-toggle:active .ios-toggle-slider::before {
+    width: 28px;
+}
+
+[data-theme="dark"] .ios-toggle:active .ios-toggle-slider::before {
+    transform: translateY(-50%) translateX(18px);
+}
+
+/* Icon positioning - fixed in track, below the knob */
+.toggle-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Sun icon - fixed on the left side of track */
+.toggle-icon-sun {
+    left: 7px;
+    opacity: 0.5;
+    color: #f59e0b;
+}
+
+/* Moon icon - fixed on the right side of track */
+.toggle-icon-moon {
+    right: 7px;
     opacity: 1;
-    transform: rotate(0deg) scale(1);
+    color: #64748b;
 }
 
-:root .theme-icon-sun {
-    opacity: 0;
-    transform: rotate(90deg) scale(0);
-}
-
-[data-theme="dark"] .theme-icon-sun {
+/* Dark mode icon states - just change opacity */
+[data-theme="dark"] .toggle-icon-sun {
     opacity: 1;
-    transform: rotate(0deg) scale(1);
+    color: #fbbf24;
 }
 
-[data-theme="dark"] .theme-icon-moon {
-    opacity: 0;
-    transform: rotate(-90deg) scale(0);
+[data-theme="dark"] .toggle-icon-moon {
+    opacity: 0.5;
+    color: #1e3a5f;
+}
+
+/* Focus state for accessibility */
+.ios-toggle input:focus-visible + .ios-toggle-slider {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
 }
 
 /* ==========================================================================
@@ -990,10 +1167,31 @@ main {
         font-size: var(--font-size-sm);
     }
 
-    .theme-toggle {
-        width: var(--button-size-sm);
-        height: var(--button-size-sm);
-        padding: var(--spacing-xs);
+    .ios-toggle-slider {
+        width: 44px;
+        height: 24px;
+    }
+
+    .ios-toggle-slider::before {
+        width: 20px;
+        height: 20px;
+    }
+
+    [data-theme="dark"] .ios-toggle-slider::before {
+        transform: translateY(-50%) translateX(20px);
+    }
+
+    .toggle-icon {
+        width: 10px;
+        height: 10px;
+    }
+
+    .toggle-icon-sun {
+        left: 5px;
+    }
+
+    .toggle-icon-moon {
+        right: 5px;
     }
 
     .sidebar .top-row .navbar-brand {
