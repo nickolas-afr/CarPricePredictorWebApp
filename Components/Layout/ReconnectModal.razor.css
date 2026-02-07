@@ -25,7 +25,7 @@
 /* Modal styling */
 #components-reconnect-modal {
     background-color: var(--card-bg, #ffffff);
-    width: 22rem;
+    width: var(--modal-width-sm, 22rem);
     max-width: 90vw;
     margin: 20vh auto;
     padding: 2rem;
