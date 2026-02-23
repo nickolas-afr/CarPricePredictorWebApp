@@ -17,7 +17,7 @@
         <h5 class="mb-0">Quick VIN Decoder</h5>
     </div>
     <div class="card-body">
-        <p class="mb-0">Enter a 17-character VIN to auto-populate car details</p>
+        <p class="mb-2">Enter a 17-character VIN to auto-populate car details</p>
         <div class="row g-2">
             <div class="col-md-8">
                 <input type="text" class="form-control" @bind="vinNumber" placeholder="Enter VIN (17 characters)" maxlength="17" />
@@ -178,6 +178,7 @@
                     <span>Check Price</span>
                 }
             </button>
+            <button type="button" class="btn btn-secondary ms-2" @onclick="FillDemoAndPredict" disabled="@isPredicting">Test</button>
         </EditForm>
     </div>
 
@@ -223,7 +224,7 @@
                             </tbody>
                         </table>
 
-                        <h4>Typical Price Range</h4>
+                        <h4 class="mt-3">Typical Price Range</h4>
                         <div class="alert alert-info">
                             <p>
                                 For this car, similar listings typically range from:
@@ -367,6 +368,20 @@
             isDecodingVin = false;
             StateHasChanged();
         }
+    }
+
+    private async Task FillDemoAndPredict()
+    {
+        carInput.Make = "Mercedes-Benz";
+        carInput.Model = "C 250";
+        carInput.Year = 2011;
+        carInput.Mileage = 250000;
+        carInput.Fuel = "Diesel";
+        carInput.Gear = "Automatic";
+        carInput.Hp = 204;
+        carInput.OfferType = 0;
+        carInput.Price = 10000;
+        await HandlePredict();
     }
 
     private void OnBrandChanged(ChangeEventArgs e)
