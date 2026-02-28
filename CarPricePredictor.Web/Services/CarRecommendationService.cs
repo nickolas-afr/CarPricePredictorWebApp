@@ -314,10 +314,10 @@ public class CarRecommendationService : ICarRecommendationService
             if (startIdx < 0 || endIdx < 0 || endIdx <= startIdx)
                 return results;
 
-            var jsonArray = json.Substring(startIdx, endIdx - startIdx + 1);
+            var jsonArray = json.AsMemory(startIdx, endIdx - startIdx + 1);
 
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var items = JsonSerializer.Deserialize<List<LlmRecommendation>>(jsonArray, options);
+            var items = JsonSerializer.Deserialize<List<LlmRecommendation>>(jsonArray.Span, options);
 
             if (items == null) return results;
 
