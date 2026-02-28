@@ -23,7 +23,7 @@ builder.Services.AddScoped<ICarRecommendationService, CarRecommendationService>(
 // Register Semantic Kernel with Ollama (only if enabled)
 var ollamaEnabled = builder.Configuration.GetValue<bool>("Ollama:Enabled");
 var ollamaBaseUrl = builder.Configuration["Ollama:BaseUrl"] ?? "http://localhost:11434";
-var ollamaModel = builder.Configuration["Ollama:Model"] ?? "llama3.2:3b";
+var ollamaModel = builder.Configuration["Ollama:Model"] ?? "qwen3:8b";
 
 if (ollamaEnabled)
 {
