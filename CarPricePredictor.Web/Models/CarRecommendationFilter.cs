@@ -11,5 +11,5 @@ public class CarRecommendationFilter
     public string OfferType { get; set; } = "Any"; // "Used", "New", "Any"
     public float MaxMileage { get; set; }          // ignored if OfferType = "New"
     public string? PreferredBodyHint { get; set; } // passed to LLM only, not filtered
-    public int MinSeatsHint { get; set; }          // passed to LLM only, not filtered
+    public int SeatsHint { get; set; }          // passed to LLM only, not filtered
 }

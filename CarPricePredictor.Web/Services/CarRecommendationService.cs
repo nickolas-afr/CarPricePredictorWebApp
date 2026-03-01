@@ -278,7 +278,7 @@ public class CarRecommendationService : ICarRecommendationService
         sb.AppendLine($"- Transmission: {filter.Gear ?? "Any"}");
         sb.AppendLine($"- Horsepower: {filter.MinHp}–{filter.MaxHp} HP");
         sb.AppendLine($"- Preferred body style: {filter.PreferredBodyHint ?? "No preference"}");
-        sb.AppendLine($"- Min seats: {(filter.MinSeatsHint > 0 ? filter.MinSeatsHint.ToString() : "No preference")}");
+        sb.AppendLine($"- Preferred number of seats: {(filter.SeatsHint > 0 ? filter.SeatsHint.ToString() : "No preference")}");
         sb.AppendLine($"- Condition: {filter.OfferType}");
         sb.AppendLine();
         sb.AppendLine("Candidate cars from our database (ranked by availability):");
