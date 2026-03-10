@@ -6,6 +6,11 @@ using System.Text.Json;
 using CarPricePredictor.Web.Data;
 using CarPricePredictor.Web.Models;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.Ollama;
+using System.Threading.Tasks;
+using Google.GenAI;
+using Google.GenAI.Types;
+using Environment = System.Environment;
 
 namespace CarPricePredictor.Web.Services;
 
@@ -50,7 +55,7 @@ public class CarRecommendationService : ICarRecommendationService
         var grouped = filtered
             .GroupBy(c => new { c.Make, c.Model })
             .OrderByDescending(g => g.Count())
-            .Take(10)
+            //.Take(10)
             .ToList();
 
         // Step 3: Run ML predictions
@@ -62,6 +67,7 @@ public class CarRecommendationService : ICarRecommendationService
             var medianMileage = Median(rows.Select(r => r.Mileage));
             var medianHp = Median(rows.Select(r => r.Hp));
             var medianPrice = Median(rows.Select(r => r.Price));
+            var familyName = NormalizeGermanModel(group.Key.Make, group.Key.Model);
 
             var input = new CarInputModel
             {
@@ -85,6 +91,7 @@ public class CarRecommendationService : ICarRecommendationService
             {
                 Make = group.Key.Make,
                 Model = group.Key.Model,
+                ModelFamily = familyName,
                 MedianPrice = medianPrice,
                 PredictedPrice = prediction.PredictedPrice,
                 MinPrice = prediction.MinPrice,
@@ -105,10 +112,19 @@ public class CarRecommendationService : ICarRecommendationService
             try
             {
                 var prompt = BuildPrompt(filter, candidates);
-                var result = await _kernel.InvokePromptAsync(prompt);
-                var json = result.ToString();
-
-                var llmResults = ParseLlmResponse(json, candidates);
+                
+                var apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
+                var client = new Client(apiKey: apiKey);
+                
+                var result = await client.Models.GenerateContentAsync(
+                    model: "gemini-3-flash-preview", contents: prompt
+                );
+                
+                Console.WriteLine(result.Candidates![0].Content!.Parts![0].Text);
+                
+                var json = result.Candidates![0].Content!.Parts![0].Text;
+                
+                var llmResults = ParseLlmResponse(json!, candidates);
                 if (llmResults.Count > 0)
                 {
                     return llmResults;
@@ -140,7 +156,7 @@ public class CarRecommendationService : ICarRecommendationService
     {
         var datasetPath = Path.Combine(_environment.ContentRootPath, "..", "CarPricePredictor.ML", "Data", "autoscout24-germany-dataset.csv");
 
-        if (File.Exists(datasetPath))
+        if (System.IO.File.Exists(datasetPath))
         {
             try
             {
@@ -268,35 +284,46 @@ public class CarRecommendationService : ICarRecommendationService
     private string BuildPrompt(CarRecommendationFilter filter, List<CandidateInfo> candidates)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("You are a car buying advisor for the European used car market.");
-        sb.AppendLine("Respond ONLY with a valid JSON array. No markdown, no explanation outside the JSON.");
+        sb.AppendLine("You are an expert car buying advisor for the European used car market.");
+        sb.AppendLine("You may think through the options first. However, your final output MUST be a valid JSON array containing the selected cars.");
         sb.AppendLine();
-        sb.AppendLine("The buyer's preferences:");
+        sb.AppendLine("### BUYER'S MANDATORY REQUIREMENTS ###");
+        sb.AppendLine(
+            "You MUST strictly adhere to these parameters. Ignore any car that does not fit the requirements.");
         sb.AppendLine($"- Max budget: €{filter.MaxBudget:N0}");
         sb.AppendLine($"- Min year: {filter.MinYear}");
         sb.AppendLine($"- Fuel: {(filter.FuelTypes.Any() ? string.Join(", ", filter.FuelTypes) : "Any")}");
         sb.AppendLine($"- Transmission: {filter.Gear ?? "Any"}");
         sb.AppendLine($"- Horsepower: {filter.MinHp}–{filter.MaxHp} HP");
-        sb.AppendLine($"- Preferred body style: {filter.PreferredBodyHint ?? "No preference"}");
-        sb.AppendLine($"- Preferred number of seats: {(filter.SeatsHint > 0 ? filter.SeatsHint.ToString() : "No preference")}");
+        sb.AppendLine($"- MANDATORY Body Style: {filter.PreferredBodyHint ?? "Any"}");
+        sb.AppendLine($"- Number of Seats: {(filter.SeatsHint > 0 ? filter.SeatsHint.ToString() : "Any")}");
         sb.AppendLine($"- Condition: {filter.OfferType}");
         sb.AppendLine();
-        sb.AppendLine("Candidate cars from our database (ranked by availability):");
+        sb.AppendLine("### CANDIDATE CARS ###");
 
         for (int i = 0; i < candidates.Count; i++)
         {
             var c = candidates[i];
-            sb.AppendLine($"{i + 1}. {c.Make} {c.Model} | Body: {c.BodyType} | Seats: {c.Seats} | Median price: €{c.MedianPrice:N0} | Predicted fair price: €{c.PredictedPrice:N0} | HP: {c.MinHp:N0}–{c.MaxHp:N0}");
+            sb.AppendLine(
+                $"{i + 1}. {c.Make} {c.Model} (Family: {c.ModelFamily})| Body: {c.BodyType} | Seats: {c.Seats} | Median price: €{c.MedianPrice:N0} | Predicted fair price: €{c.PredictedPrice:N0} | HP: {c.MinHp:N0}–{c.MaxHp:N0}");
         }
 
         sb.AppendLine();
-        sb.AppendLine("Select the best 3–5 options for this buyer. Rank them best-first.");
-        sb.AppendLine("For each, write a 2-sentence explanation covering: why it fits their needs, and one notable tradeoff.");
+        sb.AppendLine("### INSTRUCTIONS ###");
+        sb.AppendLine("1. Filter the candidate list to ONLY include cars that match the MANDATORY Body Style and Number of Seats.");
+        sb.AppendLine("   - EXCEPTION: If a candidate's Body Style is listed as 'Unknown', you must first mentally extract the base model by ignoring engine/trim numbers (e.g., 'Mercedes C 250' = 'C-Class', 'BMW 320' = '3 Series', 'Audi A4 2.0' = 'A4'). Then, check if that base model family ever offered the mandatory body style. If yes, keep it.");
+        sb.AppendLine("2. From the remaining valid candidates, select the best 3–5 options and rank them best-first.");
+        sb.AppendLine("3. Write a 2-sentence explanation for each: sentence 1 must explain why it fits their needs, and sentence 2 must state one notable tradeoff.");
         sb.AppendLine();
-        sb.AppendLine("JSON format:");
+        sb.AppendLine("### JSON SCHEMA EXAMPLE ###");
         sb.AppendLine("[");
-        sb.AppendLine("  { \"make\": \"VW\", \"model\": \"Golf\", \"explanation\": \"...\" },");
-        sb.AppendLine("  { \"make\": \"Skoda\", \"model\": \"Octavia\", \"explanation\": \"...\" }");
+        sb.AppendLine("  { ");
+        sb.AppendLine("    \"make\": \"Mercedes\", ");
+        sb.AppendLine("    \"model\": \"C 250\", ");
+        sb.AppendLine("    \"modelFamily\": \"C-Class\", ");
+        sb.AppendLine("    \"validation\": \"Matches sedan and 5 seats\", ");
+        sb.AppendLine("    \"explanation\": \"...\" ");
+        sb.AppendLine("  }");
         sb.AppendLine("]");
 
         return sb.ToString();
@@ -324,8 +351,9 @@ public class CarRecommendationService : ICarRecommendationService
             foreach (var item in items.Take(5))
             {
                 var candidate = candidates.FirstOrDefault(c =>
-                    c.Make.Equals(item.Make, StringComparison.OrdinalIgnoreCase) &&
-                    c.Model.Equals(item.Model, StringComparison.OrdinalIgnoreCase));
+                    c.Make.Contains(item.Make, StringComparison.OrdinalIgnoreCase) &&
+                    (item.Model.Contains(c.Model, StringComparison.OrdinalIgnoreCase) || 
+                     item.ModelFamily.Contains(c.ModelFamily, StringComparison.OrdinalIgnoreCase)));
 
                 if (candidate != null)
                 {
@@ -359,6 +387,26 @@ public class CarRecommendationService : ICarRecommendationService
             ? (sorted[mid - 1] + sorted[mid]) / 2f
             : sorted[mid];
     }
+    
+    private static string NormalizeGermanModel(string make, string model)
+    {
+        // Fix Mercedes (e.g., "C 250" -> "C-Class")
+        if (make.Contains("Mercedes", StringComparison.OrdinalIgnoreCase))
+        {
+            if (model.StartsWith("C ", StringComparison.OrdinalIgnoreCase)) return "C-Class";
+            if (model.StartsWith("E ", StringComparison.OrdinalIgnoreCase)) return "E-Class";
+            if (model.StartsWith("S ", StringComparison.OrdinalIgnoreCase)) return "S-Class";
+        }
+    
+        // Fix BMW (e.g., "320" -> "3 Series")
+        if (make.Contains("BMW", StringComparison.OrdinalIgnoreCase) && model.Length >= 3)
+        {
+            var series = model[0]; // Gets the '3' out of '320'
+            if (char.IsDigit(series)) return $"{series} Series"; 
+        }
+
+        return model;
+    }
 
     private class CarRow
     {
@@ -377,6 +425,7 @@ public class CarRecommendationService : ICarRecommendationService
     {
         public string Make { get; set; } = string.Empty;
         public string Model { get; set; } = string.Empty;
+        public string ModelFamily { get; set; } = string.Empty;
         public float MedianPrice { get; set; }
         public float PredictedPrice { get; set; }
         public float MinPrice { get; set; }
@@ -393,6 +442,7 @@ public class CarRecommendationService : ICarRecommendationService
     {
         public string Make { get; set; } = string.Empty;
         public string Model { get; set; } = string.Empty;
+        public string ModelFamily { get; set; } = string.Empty;
         public string? Explanation { get; set; }
     }
 }
