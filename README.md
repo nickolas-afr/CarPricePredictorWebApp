@@ -1,6 +1,6 @@
 # Car Price Predictor Web App
 
-A web application built with ASP.NET Core Blazor Server and ML.NET that predicts whether a car's price is fair, too high, or too low based on its specifications.
+A web application built with ASP.NET Core Blazor Server and ML.NET that predicts whether a car's price is fair, too high, or too low based on its specifications, and helps users discover suitable cars through an AI-assisted recommendation flow.
 
 ## Features
 
@@ -41,6 +41,14 @@ Visual gauge showing whether you're getting a good deal.
   - Red (0-30%): Overpriced / Very Overpriced
 - Descriptive labels and recommendations
 
+#### Find My Car (AI Recommendations)
+Guided 3-step wizard that recommends matching cars based on your budget and preferences.
+- Multi-step flow for budget, powertrain, and body/seat preferences
+- Filters real dataset candidates before ranking suggestions
+- Uses ML price prediction + deal score for each recommendation
+- Optional AI explanation/ranking with Gemini (`GEMINI_API_KEY`)
+- Graceful fallback to non-LLM recommendations if AI is unavailable
+
 ## Technologies
 
 - **ASP.NET Core 10.0**: Web framework
@@ -49,12 +57,14 @@ Visual gauge showing whether you're getting a good deal.
 - **Bootstrap 5.3.8**: Responsive UI design
 - **Chart.js 4.4.1**: Deal score gauge visualization
 - **RapidAPI VIN Decoder Europe2**: European VIN decoding
+- **Google GenAI SDK**: Recommendation explanations/ranking
 
 ## Project Structure
 
 - `CarPricePredictor.ML`: Console application for training the ML model
 - `CarPricePredictor.Web`: Blazor Server web application
 - `Components/Pages/Predict.razor`: Main prediction interface
+- `CarPricePredictor.Web/Components/Pages/Recommend.razor`: "Find My Car" recommendation wizard
 
 ## Getting Started
 
@@ -168,6 +178,20 @@ Visit `https://localhost:5001` or `http://localhost:5000` in your browser.
 - Your preference is automatically saved
 - Theme respects your system preference by default
 
+### Find My Car
+
+1. Navigate to the **"Find My Car"** page from the side menu
+2. Complete the 3-step wizard:
+   - **Step 1:** Budget, minimum year, condition, mileage
+   - **Step 2:** Fuel type(s), transmission, horsepower range
+   - **Step 3:** Body style and seat preferences
+3. Click **Get Recommendations**
+4. Review 3-5 recommended models with:
+   - AI/fallback explanation
+   - Predicted fair price
+   - Typical price range
+   - Deal score badge
+
 ## Price Determination Logic
 
 ### ML Model Prediction
@@ -207,6 +231,11 @@ The application uses **RapidAPI VIN Decoder Europe2** for VIN decoding, optimize
 
 **API Documentation:** [RapidAPI VIN Decoder Europe2](https://rapidapi.com/dataproviders/api/vin-decoder-europe2)
 
+### AI Recommendations (Gemini)
+The "Find My Car" feature can use Gemini to rank and explain recommendations:
+- Set environment variable: `GEMINI_API_KEY`
+- If Gemini is unavailable, the app falls back to deterministic recommendations
+
 ## Configuration
 
 ### appsettings.json Structure
@@ -240,6 +269,7 @@ For production deployments, use environment variables:
 export VinDecoder__ApiKey="your-rapidapi-key-here"
 export VinDecoder__ApiHost="vin-decoder-europe2.p.rapidapi.com"
 export VinDecoder__BaseUrl="https://vin-decoder-europe2.p.rapidapi.com"
+export GEMINI_API_KEY="your-gemini-api-key-here"
 ```
 
 ### User Secrets (Recommended for Development)
@@ -277,12 +307,14 @@ CarPricePredictorWebApp/
 - **IVinDecoderService**: VIN decoding via RapidAPI VIN Decoder Europe2
 - **IDealScoreService**: Deal score calculation
 - **ICarDataService**: Car brand/model data
+- **ICarRecommendationService**: "Find My Car" recommendations with ML + optional LLM ranking
 
 ## Dependencies
 
 ### NuGet Packages
 - `Microsoft.ML` (5.0.0) - Machine learning framework
 - `Microsoft.ML.FastTree` (5.0.0) - FastTree algorithm
+- `Google.GenAI` (1.3.0) - Gemini API client
 
 ### CDN Resources
 - Bootstrap 5.3.8 - UI framework
@@ -313,6 +345,12 @@ If theme doesn't persist between sessions:
 1. Check browser localStorage is enabled
 2. Clear browser cache and try again
 3. Check browser console for JavaScript errors
+
+### Find My Car Errors or Empty AI Results
+If recommendations fail or return fallback text:
+1. Confirm `GEMINI_API_KEY` is configured in your environment
+2. Check logs for recommendation/LLM warnings
+3. Retry with broader filters (budget, year, fuel, HP) to avoid over-filtering
 
 ## License
 
