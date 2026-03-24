@@ -1,0 +1,389 @@
+@page "/recommend"
+@inject ICarRecommendationService RecommendationService
+@inject NavigationManager NavigationManager
+@inject ILogger<Recommend> Logger
+@using CarPricePredictor.Web.Models
+@using CarPricePredictor.Web.Services
+
+<PageTitle>Find My Car</PageTitle>
+
+<h1>Find My Car</h1>
+<p class="text-muted">Answer a few questions and we'll recommend the best cars for you.</p>
+
+<!-- Progress Bar -->
+<div class="mb-4">
+    <div class="d-flex justify-content-between mb-1">
+        <small>Step @currentStep of 3</small>
+    </div>
+    <div class="progress">
+        <div class="progress-bar" role="progressbar"
+             style="width: @(currentStep * 100 / 3)%"
+             aria-valuenow="@currentStep" aria-valuemin="0" aria-valuemax="3">
+        </div>
+    </div>
+</div>
+
+@if (currentStep == 1)
+{
+    <!-- Step 1: Budget & Condition -->
+    <div class="card">
+        <div class="card-header"><h5 class="mb-0">Step 1: Budget &amp; Condition</h5></div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">Max Budget: <strong>€@maxBudget.ToString("N0")</strong></label>
+                <input type="number" class="form-control" @bind="maxBudget" min="1000" max="150000" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Minimum Year: <strong>@minYear</strong></label>
+                <input type="range" class="form-range" min="2000" max="2025" step="1" @bind="minYear" @bind:event="oninput" />
+                <div class="d-flex justify-content-between">
+                    <small class="text-muted">2000</small>
+                    <small class="text-muted">2025</small>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Condition</label>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="offerType" id="offerUsed" value="Used" checked="@(offerType == "Used")" @onchange="@(() => offerType = "Used")" />
+                    <label class="btn btn-outline-primary" for="offerUsed">Used</label>
+
+                    <input type="radio" class="btn-check" name="offerType" id="offerNew" value="New" checked="@(offerType == "New")" @onchange="@(() => offerType = "New")" />
+                    <label class="btn btn-outline-primary" for="offerNew">New</label>
+
+                    <input type="radio" class="btn-check" name="offerType" id="offerAny" value="Any" checked="@(offerType == "Any")" @onchange="@(() => offerType = "Any")" />
+                    <label class="btn btn-outline-primary" for="offerAny">Any</label>
+                </div>
+            </div>
+
+            @if (offerType != "New")
+            {
+                <div class="mb-3">
+                    <label class="form-label">Max Mileage: <strong>@maxMileage.ToString("N0") km</strong></label>
+                    <input type="range" class="form-range" min="0" max="300000" step="5000" @bind="maxMileage" @bind:event="oninput" />
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">0 km</small>
+                        <small class="text-muted">300,000 km</small>
+                    </div>
+                </div>
+            }
+
+            <div class="d-flex justify-content-end">
+                <button class="btn btn-primary" @onclick="NextStep">Next →</button>
+            </div>
+        </div>
+    </div>
+}
+else if (currentStep == 2)
+{
+    <!-- Step 2: Powertrain -->
+    <div class="card">
+        <div class="card-header"><h5 class="mb-0">Step 2: Powertrain</h5></div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">Fuel Type</label>
+                <div class="row g-2">
+                    <div class="col-auto">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="fuelGasoline" checked="@fuelGasoline" @onchange="@(e => fuelGasoline = (bool)(e.Value ?? false))" />
+                            <label class="form-check-label" for="fuelGasoline">Gasoline</label>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="fuelDiesel" checked="@fuelDiesel" @onchange="@(e => fuelDiesel = (bool)(e.Value ?? false))" />
+                            <label class="form-check-label" for="fuelDiesel">Diesel</label>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="fuelElectric" checked="@fuelElectric" @onchange="@(e => fuelElectric = (bool)(e.Value ?? false))" />
+                            <label class="form-check-label" for="fuelElectric">Electric</label>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="fuelHybrid" checked="@fuelHybrid" @onchange="@(e => fuelHybrid = (bool)(e.Value ?? false))" />
+                            <label class="form-check-label" for="fuelHybrid">Hybrid</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Transmission</label>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="gear" id="gearAny" value="" checked="@(gear == null)" @onchange="@(() => gear = null)" />
+                    <label class="btn btn-outline-primary" for="gearAny">Any</label>
+
+                    <input type="radio" class="btn-check" name="gear" id="gearAuto" value="Automatic" checked="@(gear == "Automatic")" @onchange="@(() => gear = "Automatic")" />
+                    <label class="btn btn-outline-primary" for="gearAuto">Automatic</label>
+
+                    <input type="radio" class="btn-check" name="gear" id="gearManual" value="Manual" checked="@(gear == "Manual")" @onchange="@(() => gear = "Manual")" />
+                    <label class="btn btn-outline-primary" for="gearManual">Manual</label>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">HP Range</label>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label"><small>Min HP</small></label>
+                        <input type="number" class="form-control" @bind="minHp" min="0" max="1000" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label"><small>Max HP</small></label>
+                        <input type="number" class="form-control" @bind="maxHp" min="0" max="1000" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <button class="btn btn-secondary" @onclick="PrevStep">← Back</button>
+                <button class="btn btn-primary" @onclick="NextStep">Next →</button>
+            </div>
+        </div>
+    </div>
+}
+else if (currentStep == 3)
+{
+    <!-- Step 3: Body & Comfort (Hints) -->
+    <div class="card">
+        <div class="card-header"><h5 class="mb-0">Step 3: Body &amp; Comfort</h5></div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">Body Style</label>
+                <div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="bodyHint" id="bodyNone" checked="@(bodyHint == null)" @onchange="@(() => bodyHint = null)" />
+                        <label class="form-check-label" for="bodyNone">No Preference</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="bodyHint" id="bodyHatch" checked="@(bodyHint == "Hatchback")" @onchange="@(() => bodyHint = "Hatchback")" />
+                        <label class="form-check-label" for="bodyHatch">Hatchback</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="bodyHint" id="bodySedan" checked="@(bodyHint == "Sedan")" @onchange="@(() => bodyHint = "Sedan")" />
+                        <label class="form-check-label" for="bodySedan">Sedan</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="bodyHint" id="bodySuv" checked="@(bodyHint == "SUV")" @onchange="@(() => bodyHint = "SUV")" />
+                        <label class="form-check-label" for="bodySuv">SUV</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="bodyHint" id="bodyCombi" checked="@(bodyHint == "Combi")" @onchange="@(() => bodyHint = "Combi")" />
+                        <label class="form-check-label" for="bodyCombi">Combi</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="bodyHint" id="bodyCoupe" checked="@(bodyHint == "Coupe")" @onchange="@(() => bodyHint = "Coupe")" />
+                        <label class="form-check-label" for="bodyCoupe">Coupe</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Minimum Seats</label>
+                <div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="seatsHint" id="seatsNone" checked="@(seatsHint == 0)" @onchange="@(() => seatsHint = 0)" />
+                        <label class="form-check-label" for="seatsNone">No Preference</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="seatsHint" id="seats2" checked="@(seatsHint == 2)" @onchange="@(() => seatsHint = 2)" />
+                        <label class="form-check-label" for="seats2">2</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="seatsHint" id="seats5" checked="@(seatsHint == 5)" @onchange="@(() => seatsHint = 5)" />
+                        <label class="form-check-label" for="seats5">5</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="seatsHint" id="seats7" checked="@(seatsHint == 7)" @onchange="@(() => seatsHint = 7)" />
+                        <label class="form-check-label" for="seats7">7</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                💡 <strong>Tip:</strong> Body type and seat count are hints for the AI — our dataset doesn't include these fields, so the AI uses its general knowledge to match your preferences.
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <button class="btn btn-secondary" @onclick="PrevStep">← Back</button>
+                <button class="btn btn-success" @onclick="GetRecommendations" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <span>Finding...</span>
+                    }
+                    else
+                    {
+                        <span>Get Recommendations</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showResults)
+{
+    <!-- Step 4: Results -->
+    @if (isLoading)
+    {
+        <div class="text-center my-5">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Hang tight! We are finding your perfect match!!</p>
+        </div>
+    }
+    else if (hasError)
+    {
+        <div class="alert alert-danger mt-4">
+            Something went wrong while finding recommendations. Please check your Gemini API setup and try again.
+        </div>
+        <button class="btn btn-primary mt-2" @onclick="StartOver">Start Over</button>
+    }
+    else if (results != null && results.Any())
+    {
+        <div class="mt-4">
+            @foreach (var rec in results)
+            {
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h4 class="mb-0">@rec.Make @rec.Model</h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="fst-italic">@rec.LlmExplanation</p>
+                        <p><strong>Predicted fair price:</strong> €@rec.EstimatedPrice.ToString("N0")</p>
+                        <p><strong>Typical range:</strong> €@rec.MinPrice.ToString("N0") – €@rec.MaxPrice.ToString("N0")</p>
+                        <span class="badge @GetDealBadgeClass(rec.DealScore.ColorZone)">
+                            @rec.DealScore.Label (Score: @rec.DealScore.Score)
+                        </span>
+                        <div class="mt-3">
+                            <button class="btn btn-outline-primary btn-sm" @onclick="@(() => NavigationManager.NavigateTo("/predict"))">
+                                🔍 Check this car's price
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <button class="btn btn-primary mt-2" @onclick="StartOver">Start Over</button>
+    }
+    else
+    {
+        <div class="alert alert-warning mt-4">
+            No cars matched your criteria. Try adjusting your filters.
+        </div>
+        <button class="btn btn-primary mt-2" @onclick="StartOver">Start Over</button>
+    }
+}
+
+@code {
+    private int currentStep = 1;
+    private bool isLoading = false;
+    private bool showResults = false;
+    private bool hasError = false;
+    private List<CarRecommendationResult>? results;
+
+    // Step 1 fields
+    private float maxBudget = 25000;
+    private int minYear = 2018;
+    private string offerType = "Used";
+    private float maxMileage = 100000;
+
+    // Step 2 fields
+    private bool fuelGasoline = false;
+    private bool fuelDiesel = false;
+    private bool fuelElectric = false;
+    private bool fuelHybrid = false;
+    private string? gear = null;
+    private float minHp = 80;
+    private float maxHp = 250;
+
+    // Step 3 fields
+    private string? bodyHint = null;
+    private int seatsHint = 0;
+
+    private void NextStep()
+    {
+        if (currentStep < 3)
+            currentStep++;
+    }
+
+    private void PrevStep()
+    {
+        if (currentStep > 1)
+            currentStep--;
+    }
+
+    private void StartOver()
+    {
+        currentStep = 1;
+        showResults = false;
+        hasError = false;
+        results = null;
+    }
+
+    private async Task GetRecommendations()
+    {
+        isLoading = true;
+        showResults = true;
+        hasError = false;
+        results = null;
+        StateHasChanged();
+
+        try
+        {
+            var filter = new CarRecommendationFilter
+            {
+                MaxBudget = maxBudget,
+                MinYear = minYear,
+                OfferType = offerType,
+                MaxMileage = maxMileage,
+                Gear = gear,
+                MinHp = minHp,
+                MaxHp = maxHp,
+                PreferredBodyHint = bodyHint,
+                SeatsHint = seatsHint,
+                FuelTypes = BuildFuelTypes()
+            };
+
+            results = await RecommendationService.GetRecommendationsAsync(filter);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error getting recommendations");
+            hasError = true;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private List<string> BuildFuelTypes()
+    {
+        var types = new List<string>();
+        if (fuelGasoline) types.Add("Gasoline");
+        if (fuelDiesel) types.Add("Diesel");
+        if (fuelElectric) types.Add("Electric");
+        if (fuelHybrid)
+        {
+            types.Add("Hybrid/Petrol");
+            types.Add("Hybrid/Diesel");
+        }
+        return types;
+    }
+
+    private string GetDealBadgeClass(string colorZone) => colorZone switch
+    {
+        "green" => "bg-success",
+        "yellow" => "bg-warning text-dark",
+        "red" => "bg-danger",
+        _ => "bg-secondary"
+    };
+}

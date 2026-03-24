@@ -14,6 +14,9 @@ builder.Services.AddSingleton<ICarDataService, CarDataService>();
 builder.Services.AddScoped<IVinDecoderService, VinDecoderService>();
 builder.Services.AddScoped<IDealScoreService, DealScoreService>();
 
+// Register recommendation service
+builder.Services.AddScoped<ICarRecommendationService, CarRecommendationService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
