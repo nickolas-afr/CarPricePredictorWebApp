@@ -57,7 +57,6 @@ Guided 3-step wizard that recommends matching cars based on your budget and pref
 - **Bootstrap 5.3.8**: Responsive UI design
 - **Chart.js 4.4.1**: Deal score gauge visualization
 - **RapidAPI VIN Decoder Europe2**: European VIN decoding
-- **Microsoft Semantic Kernel + Ollama connector**: AI orchestration framework and connector
 - **Google GenAI SDK**: Recommendation explanations/ranking
 
 ## Project Structure
@@ -235,7 +234,6 @@ The application uses **RapidAPI VIN Decoder Europe2** for VIN decoding, optimize
 ### AI Recommendations (Gemini)
 The "Find My Car" feature can use Gemini to rank and explain recommendations:
 - Set environment variable: `GEMINI_API_KEY`
-- Keep `Ollama:Enabled` set to `true` to enable the recommendation service
 - If Gemini is unavailable, the app falls back to deterministic recommendations
 
 ## Configuration
@@ -264,10 +262,6 @@ The "Find My Car" feature can use Gemini to rank and explain recommendations:
 - `VinDecoder:ApiHost`: RapidAPI host header (default: vin-decoder-europe2.p.rapidapi.com)
 - `VinDecoder:ApiKey`: Your RapidAPI key (required for real VIN decoding)
 - `VinDecoder:UseMockData`: Set to `true` to use mock data instead of real API (for testing)
-- `Ollama:Enabled`: Enables recommendation AI path wiring (default: `true`)
-- `Ollama:BaseUrl`: Ollama endpoint used by Semantic Kernel setup
-- `Ollama:Model`: Ollama chat model id used by kernel registration
-- `Ollama:TimeoutSeconds`: Timeout for Ollama HTTP client
 
 ### Environment Variables (Production)
 For production deployments, use environment variables:
@@ -320,9 +314,7 @@ CarPricePredictorWebApp/
 ### NuGet Packages
 - `Microsoft.ML` (5.0.0) - Machine learning framework
 - `Microsoft.ML.FastTree` (5.0.0) - FastTree algorithm
-- `Microsoft.SemanticKernel` - AI orchestration
-- `Microsoft.SemanticKernel.Connectors.Ollama` - Ollama connector
-- `Google.GenAI` - Gemini API client
+- `Google.GenAI` (1.3.0) - Gemini API client
 
 ### CDN Resources
 - Bootstrap 5.3.8 - UI framework
@@ -357,9 +349,8 @@ If theme doesn't persist between sessions:
 ### Find My Car Errors or Empty AI Results
 If recommendations fail or return fallback text:
 1. Confirm `GEMINI_API_KEY` is configured in your environment
-2. Ensure `Ollama:Enabled` is `true` in configuration
-3. Check logs for recommendation/LLM warnings
-4. Retry with broader filters (budget, year, fuel, HP) to avoid over-filtering
+2. Check logs for recommendation/LLM warnings
+3. Retry with broader filters (budget, year, fuel, HP) to avoid over-filtering
 
 ## License
 

@@ -1,12 +1,8 @@
-#pragma warning disable SKEXP0070
-
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using CarPricePredictor.Web.Data;
 using CarPricePredictor.Web.Models;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Ollama;
 using System.Threading.Tasks;
 using Google.GenAI;
 using Google.GenAI.Types;
@@ -19,24 +15,18 @@ public class CarRecommendationService : ICarRecommendationService
     private readonly IWebHostEnvironment _environment;
     private readonly IPredictionService _predictionService;
     private readonly IDealScoreService _dealScoreService;
-    private readonly IConfiguration _configuration;
     private readonly ILogger<CarRecommendationService> _logger;
-    private readonly Kernel? _kernel;
 
     public CarRecommendationService(
         IWebHostEnvironment environment,
         IPredictionService predictionService,
         IDealScoreService dealScoreService,
-        IConfiguration configuration,
-        ILogger<CarRecommendationService> logger,
-        Kernel? kernel = null)
+        ILogger<CarRecommendationService> logger)
     {
         _environment = environment;
         _predictionService = predictionService;
         _dealScoreService = dealScoreService;
-        _configuration = configuration;
         _logger = logger;
-        _kernel = kernel;
     }
 
     public async Task<List<CarRecommendationResult>> GetRecommendationsAsync(CarRecommendationFilter filter)
@@ -106,14 +96,17 @@ public class CarRecommendationService : ICarRecommendationService
         }
 
         // Step 4: Try LLM
-        var ollamaEnabled = _configuration.GetValue<bool>("Ollama:Enabled");
-        if (ollamaEnabled && _kernel != null)
+        try
         {
-            try
-            {
-                var prompt = BuildPrompt(filter, candidates);
+            var prompt = BuildPrompt(filter, candidates);
                 
-                var apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
+            var apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                _logger.LogWarning("GEMINI_API_KEY is not set; falling back to deterministic recommendations");
+            }
+            else
+            {
                 var client = new Client(apiKey: apiKey);
                 
                 var result = await client.Models.GenerateContentAsync(
@@ -130,10 +123,10 @@ public class CarRecommendationService : ICarRecommendationService
                     return llmResults;
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "LLM call failed, falling back to filtered results");
-            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "LLM call failed, falling back to filtered results");
         }
 
         // Step 5: Fallback

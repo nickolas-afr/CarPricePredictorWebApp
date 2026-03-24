@@ -1,7 +1,4 @@
-#pragma warning disable SKEXP0070
-
 using CarPricePredictor.Web.Services;
-using Microsoft.SemanticKernel;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,30 +16,6 @@ builder.Services.AddScoped<IDealScoreService, DealScoreService>();
 
 // Register recommendation service
 builder.Services.AddScoped<ICarRecommendationService, CarRecommendationService>();
-
-// Register Semantic Kernel with Ollama (only if enabled)
-var ollamaEnabled = builder.Configuration.GetValue<bool>("Ollama:Enabled");
-var ollamaBaseUrl = builder.Configuration["Ollama:BaseUrl"] ?? "http://localhost:11434";
-var ollamaModel = builder.Configuration["Ollama:Model"] ?? "qwen3:8b";
-var ollamaTimeoutSeconds = builder.Configuration.GetValue("Ollama:TimeoutSeconds", 300);
-
-if (ollamaEnabled)
-{
-    builder.Services.AddSingleton<Kernel>(_ =>
-    {
-        var kernelBuilder = Kernel.CreateBuilder();
-        var httpClient = new HttpClient(new SocketsHttpHandler())
-        {
-            BaseAddress = new Uri(ollamaBaseUrl),
-            Timeout = TimeSpan.FromSeconds(ollamaTimeoutSeconds)
-        };
-        kernelBuilder.AddOllamaChatCompletion(
-            modelId: ollamaModel,
-            httpClient: httpClient
-        );
-        return kernelBuilder.Build();
-    });
-}
 
 var app = builder.Build();
 
