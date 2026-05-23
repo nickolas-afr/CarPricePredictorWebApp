@@ -2,6 +2,10 @@
 
 A web application built with ASP.NET Core Blazor Server and ML.NET that predicts whether a car's price is fair, too high, or too low based on its specifications, and helps users discover suitable cars through an AI-assisted recommendation flow.
 
+## User Documentation
+
+- See [USER_INSTRUCTIONS_MANUAL.md](USER_INSTRUCTIONS_MANUAL.md) for a step-by-step manual written for end users.
+
 ## Features
 
 ### Core Features
