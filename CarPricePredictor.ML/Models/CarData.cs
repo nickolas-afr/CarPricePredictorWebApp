@@ -32,3 +32,8 @@ public class CarData
     [LoadColumn(8)]
     public float Year { get; set; }
 }
+
+public class CarDataAge : CarData
+{
+    public float CarAge { get; set; }
+}

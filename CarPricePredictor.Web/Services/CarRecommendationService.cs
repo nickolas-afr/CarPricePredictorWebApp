@@ -147,7 +147,7 @@ public class CarRecommendationService : ICarRecommendationService
 
     private List<CarRow> ReadCsvData()
     {
-        var datasetPath = Path.Combine(_environment.ContentRootPath, "..", "CarPricePredictor.ML", "Data", "autoscout24-germany-dataset.csv");
+        var datasetPath = Path.Combine(_environment.ContentRootPath, "..", "CarPricePredictor.ML", "Data", "germany_used_cars_combined.csv");
 
         if (System.IO.File.Exists(datasetPath))
         {

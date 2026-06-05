@@ -74,7 +74,8 @@ public class MLPredictionService : IPredictionService
             Gear = input.Gear,
             OfferType = input.OfferType == 0 ? "Used" : "New",  // Convert float to string
             Hp = input.Hp,
-            Year = input.Year
+            Year = input.Year,
+            CarAge = DateTime.Now.Year - input.Year
         };
 
         // Make prediction
@@ -124,6 +125,7 @@ public class MLPredictionService : IPredictionService
         public string OfferType { get; set; } = string.Empty;  // Changed from float to string
         public float Hp { get; set; }
         public float Year { get; set; }
+        public float CarAge { get; set; }
     }
 
     private class MLCarPricePrediction

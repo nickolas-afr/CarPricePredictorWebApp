@@ -5,19 +5,48 @@
 <h1>Welcome to Car Price Predictor</h1>
 
 <p>
-    This application uses Machine Learning to help you determine if a car's price is fair.
-    Simply enter the car details and the asking price, and we'll tell you if it's:
+    This application combines Machine Learning and AI to help you navigate the used car market with confidence. Choose one of our tools below to get started:
 </p>
 
-<ul>
-    <li><strong>Too High</strong> - The asking price is above market value</li>
-    <li><strong>Good Price</strong> - The asking price is within fair market range</li>
-    <li><strong>Too Low</strong> - The asking price is below market value</li>
-</ul>
-
-<p>
-    <a href="/predict" class="btn btn-primary">Start Price Check</a>
-</p>
+<div class="row mt-4">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h3 class="card-title">
+                    <span class="oi oi-calculator" aria-hidden="true"></span> Price Prediction
+                </h3>
+                <p class="card-text">
+                    Determine if a car's asking price is fair. Enter the car details (or quickly auto-fill them using our VIN decoder) and the asking price, and we'll tell you if it's:
+                </p>
+                <ul>
+                    <li><strong>Too High</strong> - The asking price is above market value</li>
+                    <li><strong>Good Price</strong> - The asking price is within fair market range</li>
+                    <li><strong>Too Low</strong> - The asking price is below market value</li>
+                </ul>
+                <a href="/predict" class="btn btn-primary mt-auto">Start Price Check</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h3 class="card-title">
+                    <span class="bi bi-search-heart-fill" aria-hidden="true"></span> Find My Car
+                </h3>
+                <p class="card-text">
+                    Not sure what to buy? Our AI-powered recommendation wizard helps you find the perfect car based on your budget, preferred body style, and requirements.
+                </p>
+                <ol>
+                    <li>Set your budget and constraints</li>
+                    <li>Choose your preferred powertrain and comfort hints</li>
+                    <li>Let Gemini AI and our ML model find your best matches</li>
+                </ol>
+                <a href="/recommend" class="btn btn-success mt-auto">Find My Car</a>
+            </div>
+        </div>
+    </div>
+</div>
 
 <h3>How it works</h3>
 <ol>

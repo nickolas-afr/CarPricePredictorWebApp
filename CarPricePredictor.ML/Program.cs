@@ -9,48 +9,72 @@ class Program
     static void Main(string[] args)
     {
         Console.WriteLine("=== Car Price Predictor - ML Model Training ===\n");
-        Console.WriteLine("Using Kaggle Cars Germany Dataset\n");
 
         var mlContext = new MLContext(seed: 0);
 
         // Load data
         Console.WriteLine("Loading training data from CSV...");
-        string dataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "autoscout24-germany-dataset.csv");
+        //string dataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "autoscout24-germany-dataset.csv");
+        string dataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "germany_used_cars_combined.csv");
         
         if (!File.Exists(dataPath))
         {
             Console.WriteLine($"ERROR: Dataset not found at: {dataPath}");
-            Console.WriteLine("\nPlease download the dataset from:");
-            Console.WriteLine("https://www.kaggle.com/datasets/ander289386/cars-germany");
-            Console.WriteLine("\nExtract and place 'autoscout24-germany-dataset.csv' in the Data folder.");
             Console.WriteLine("\nPress any key to exit...");
             Console.ReadKey();
             return;
         }
 
-        IDataView dataView = mlContext.Data.LoadFromTextFile<CarData>(
+        IDataView rawDataView = mlContext.Data.LoadFromTextFile<CarData>(
             path: dataPath,
             hasHeader: true,
             separatorChar: ',');
+
+        // Pre-process data: Convert absolute Year to CarAge (Dataset is scraped in 2023)
+        Console.WriteLine($"Transforming absolute years to relative car age...");
+        var processedEnumerable = mlContext.Data.CreateEnumerable<CarData>(rawDataView, reuseRowObject: false)
+            .Where(car => !string.IsNullOrWhiteSpace(car.Model))
+            .Where(car => car.Hp > 0)
+            .Where(car => !string.IsNullOrWhiteSpace(car.Gear))
+            .Select(car => 
+            {
+                return new CarDataAge
+                {
+                    Mileage = car.Mileage,
+                    Make = car.Make,
+                    Model = car.Model,
+                    Fuel = car.Fuel,
+                    Gear = car.Gear,
+                    OfferType = car.OfferType,
+                    Price = car.Price,
+                    Hp = car.Hp,
+                    Year = car.Year,
+                    CarAge = 2023 - car.Year
+                };
+            });
+        
+        IDataView dataView = mlContext.Data.LoadFromEnumerable(processedEnumerable);
 
         Console.WriteLine($"Loaded data successfully!");
         
         // Inspect the data
         Console.WriteLine("\nInspecting first few rows...");
-        var dataPreview = mlContext.Data.CreateEnumerable<CarData>(dataView, reuseRowObject: false).Take(3);
+        var dataPreview = mlContext.Data.CreateEnumerable<CarDataAge>(dataView, reuseRowObject: false).Take(3);
         foreach (var row in dataPreview)
         {
-            Console.WriteLine($"  {row.Make} {row.Model}, {row.Year}, {row.Mileage:N0}km, {row.Hp}hp, ${row.Price:N0}");
+            Console.WriteLine($"  {row.Make} {row.Model}, {row.Year} ({row.CarAge} yrs old), {row.Mileage:N0}km, {row.Hp}hp, ${row.Price:N0}");
         }
 
-        // Take a sample for faster training (optional - remove for full dataset)
-        Console.WriteLine("\nPreparing data for training...");
-        var sampleData = mlContext.Data.TakeRows(dataView, 50000);
+        Console.WriteLine("\nFiltering outliers and preparing full dataset for training...");
+        // Remove massive outliers that skew the model
+        var filteredData = mlContext.Data.FilterRowsByColumn(dataView, "Label", lowerBound: 500, upperBound: 250000);
+        filteredData = mlContext.Data.FilterRowsByColumn(filteredData, "Mileage", lowerBound: 0, upperBound: 600000);
+        filteredData = mlContext.Data.FilterRowsByColumn(filteredData, "Hp", lowerBound: 20, upperBound: 1000);
         
         Console.WriteLine($"Data ready for training!");
 
         // Split data for training and testing
-        var split = mlContext.Data.TrainTestSplit(sampleData, testFraction: 0.2);
+        var split = mlContext.Data.TrainTestSplit(filteredData, testFraction: 0.1);
 
         // Build training pipeline
         Console.WriteLine("Building training pipeline...");
@@ -59,15 +83,18 @@ class Program
             .Append(mlContext.Transforms.Categorical.OneHotEncoding("FuelEncoded", "Fuel"))
             .Append(mlContext.Transforms.Categorical.OneHotEncoding("GearEncoded", "Gear"))
             .Append(mlContext.Transforms.Categorical.OneHotEncoding("OfferTypeEncoded", "OfferType"))
+            .Append(mlContext.Transforms.NormalizeMinMax("MileageNorm", "Mileage"))
+            .Append(mlContext.Transforms.NormalizeMinMax("HpNorm", "Hp"))
+            .Append(mlContext.Transforms.NormalizeMinMax("CarAgeNorm", "CarAge"))
             .Append(mlContext.Transforms.Concatenate("Features", 
-                "MakeEncoded", "ModelEncoded", "Mileage", "FuelEncoded", "GearEncoded", "OfferTypeEncoded", "Hp", "Year"))
+                "MakeEncoded", "ModelEncoded", "MileageNorm", "FuelEncoded", "GearEncoded", "OfferTypeEncoded", "HpNorm", "CarAgeNorm"))
             .Append(mlContext.Regression.Trainers.FastTree(
                 labelColumnName: "Label",
                 featureColumnName: "Features",
-                numberOfLeaves: 20,
-                numberOfTrees: 100,
-                minimumExampleCountPerLeaf: 10,
-                learningRate: 0.2));
+                numberOfLeaves: 150,                  // Reduced to prevent overfitting (memorizing the dataset)
+                numberOfTrees: 1000,                  // Sweet spot for solid boosting without extreme computational cost
+                minimumExampleCountPerLeaf: 50,       // Requires at least 50 similar cars to form a rule. Excellent for generalization!
+                learningRate: 0.05));                 // Standard balanced learning rate
 
         // Train the model
         Console.WriteLine("Training model... (this may take a few minutes)");
@@ -96,9 +123,9 @@ class Program
 
         // Test predictions
         Console.WriteLine("\n=== Testing Sample Predictions ===");
-        var predictionEngine = mlContext.Model.CreatePredictionEngine<CarData, CarPricePrediction>(model);
+        var predictionEngine = mlContext.Model.CreatePredictionEngine<CarDataAge, CarPricePrediction>(model);
 
-        var testCar = new CarData
+        var testCar = new CarDataAge
         {
             Make = "Audi",
             Model = "A4",
@@ -107,7 +134,8 @@ class Program
             Gear = "Automatic",
             OfferType = "Used",
             Hp = 150,
-            Year = 2018
+            Year = 2018,
+            CarAge = 2026 - 2018
         };
 
         var prediction = predictionEngine.Predict(testCar);
